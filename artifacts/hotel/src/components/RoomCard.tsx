@@ -18,6 +18,9 @@ export interface RoomLike {
   bedType: string;
   amenities: string[];
   images: string[];
+  discountPrice?: number | null;
+  discountLabel?: string | null;
+  discountLabelAr?: string | null;
 }
 
 export function RoomCard({ room }: { room: RoomLike }) {
@@ -50,11 +53,24 @@ export function RoomCard({ room }: { room: RoomLike }) {
     >
       <div className="img-fx img-fx-shine relative h-64 bg-charcoal">
         <img src={img} alt={name} className="tilt-img absolute inset-0 w-full h-full object-cover" loading="lazy" />
-        <div className="absolute top-3 ltr:left-3 rtl:right-3">
+        <div className="absolute top-3 ltr:left-3 rtl:right-3 flex items-center gap-2">
           <span className="badge bg-charcoal/80 text-gold border-gold">{t(`type.${room.type}`)}</span>
+          {room.discountPrice != null && room.discountPrice < room.price && (
+            <span className="badge bg-gold text-charcoal border-gold font-bold uppercase tracking-widest">
+              {(language === "ar" ? room.discountLabelAr : room.discountLabel) || t("rooms.offer")}
+            </span>
+          )}
         </div>
         <div className="absolute bottom-3 ltr:right-3 rtl:left-3 bg-charcoal/85 text-gold px-3 py-1.5 text-sm">
-          <span className="font-display text-xl">{formatSAR(room.price)}</span> <span className="text-xs opacity-80">{t("common.sar")}/{t("rooms.perNight")}</span>
+          {room.discountPrice != null && room.discountPrice < room.price ? (
+            <>
+              <span className="text-xs opacity-70 line-through me-1">{formatSAR(room.price)}</span>
+              <span className="font-display text-xl">{formatSAR(room.discountPrice)}</span>
+            </>
+          ) : (
+            <span className="font-display text-xl">{formatSAR(room.price)}</span>
+          )}{" "}
+          <span className="text-xs opacity-80">{t("common.sar")}/{t("rooms.perNight")}</span>
         </div>
       </div>
       <div className="p-5 space-y-3">

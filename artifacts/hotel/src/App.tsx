@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -62,7 +63,36 @@ function PublicRouter() {
   );
 }
 
+/**
+ * Force native date / number / time pickers to render with English (Latin)
+ * digits and month names regardless of the document's UI language.
+ */
+function useEnglishNumericInputs() {
+  useEffect(() => {
+    const SELECTOR = 'input[type="date"],input[type="month"],input[type="datetime-local"],input[type="time"],input[type="week"],input[type="number"]';
+    const apply = (el: Element) => {
+      el.setAttribute("lang", "en-US");
+      el.setAttribute("dir", "ltr");
+    };
+    const applyAll = (root: ParentNode) => root.querySelectorAll(SELECTOR).forEach(apply);
+    applyAll(document);
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        m.addedNodes.forEach((n) => {
+          if (n.nodeType !== 1) return;
+          const el = n as Element;
+          if (el.matches?.(SELECTOR)) apply(el);
+          if ("querySelectorAll" in el) applyAll(el);
+        });
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
+  }, []);
+}
+
 function App() {
+  useEnglishNumericInputs();
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>

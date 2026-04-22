@@ -4,6 +4,7 @@ import roomsRouter from "./rooms";
 import bookingsRouter from "./bookings";
 import authRouter from "./auth";
 import adminRouter from "./admin";
+import adminRoomsRouter from "./admin-rooms";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(roomsRouter);
 router.use(bookingsRouter);
 router.use(authRouter);
 router.use(adminRouter);
+router.use(adminRoomsRouter);
 
 export default router;

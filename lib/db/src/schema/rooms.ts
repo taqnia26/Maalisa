@@ -14,6 +14,9 @@ export const roomsTable = pgTable("rooms", {
   amenities: text("amenities").array().notNull().default([]),
   images: text("images").array().notNull().default([]),
   status: text("status").notNull().default("available"),
+  discountPrice: numeric("discount_price", { precision: 10, scale: 2 }),
+  discountLabel: text("discount_label"),
+  discountLabelAr: text("discount_label_ar"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

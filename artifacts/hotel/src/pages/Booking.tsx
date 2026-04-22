@@ -181,16 +181,16 @@ export default function BookingPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="label">{t("booking.checkIn")}</label>
-                    <input type="date" min={todayISO(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="field" />
+                    <input type="date" lang="en-US" dir="ltr" min={todayISO(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="field" />
                   </div>
                   <div>
                     <label className="label">{t("booking.checkOut")}</label>
-                    <input type="date" min={checkIn || todayISO(1)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="field" />
+                    <input type="date" lang="en-US" dir="ltr" min={checkIn || todayISO(1)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="field" />
                   </div>
                 </div>
                 <div>
                   <label className="label">{t("booking.guests")}</label>
-                  <input type="number" min={1} max={room?.capacity ?? 8} value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="field" />
+                  <input type="number" lang="en-US" dir="ltr" min={1} max={room?.capacity ?? 8} value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="field" />
                 </div>
                 {error && <div className="text-destructive text-sm">{error}</div>}
                 <button

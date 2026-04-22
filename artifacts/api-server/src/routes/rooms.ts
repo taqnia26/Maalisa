@@ -19,6 +19,9 @@ function serializeRoom(r: typeof roomsTable.$inferSelect) {
     amenities: r.amenities ?? [],
     images: r.images ?? [],
     status: r.status,
+    discountPrice: r.discountPrice == null ? null : Number(r.discountPrice),
+    discountLabel: r.discountLabel ?? null,
+    discountLabelAr: r.discountLabelAr ?? null,
   };
 }
 

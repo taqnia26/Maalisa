@@ -28,13 +28,13 @@ export function QuickBookWidget() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-end">
         <Field icon={<CalendarIcon className="w-3.5 h-3.5" />} label={t("booking.checkIn")}>
-          <input type="date" min={todayISO(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="quick-input" />
+          <input type="date" lang="en-US" dir="ltr" min={todayISO(0)} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className="quick-input" />
         </Field>
         <Field icon={<CalendarIcon className="w-3.5 h-3.5" />} label={t("booking.checkOut")}>
-          <input type="date" min={checkIn || todayISO(1)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="quick-input" />
+          <input type="date" lang="en-US" dir="ltr" min={checkIn || todayISO(1)} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className="quick-input" />
         </Field>
         <Field icon={<Users className="w-3.5 h-3.5" />} label={t("booking.guests")}>
-          <input type="number" min={1} max={10} value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="quick-input" />
+          <input type="number" lang="en-US" dir="ltr" min={1} max={10} value={guests} onChange={(e) => setGuests(Number(e.target.value))} className="quick-input" />
         </Field>
         <Field icon={<BedDouble className="w-3.5 h-3.5" />} label={t("booking.room")}>
           <select className="quick-input" value={roomId} onChange={(e) => setRoomId(e.target.value)}>

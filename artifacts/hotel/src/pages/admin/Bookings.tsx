@@ -67,8 +67,8 @@ export default function AdminBookings() {
     <AdminLayout>
       <div className="flex flex-wrap items-end gap-3 mb-6">
         <h1 className="font-display text-3xl text-charcoal flex-1">{t("admin.bookings")}</h1>
-        <div><label className="label">{t("booking.checkIn")}</label><input type="date" className="field !py-2" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
-        <div><label className="label">{t("booking.checkOut")}</label><input type="date" className="field !py-2" value={to} onChange={(e) => setTo(e.target.value)} /></div>
+        <div><label className="label">{t("booking.checkIn")}</label><input type="date" lang="en-US" dir="ltr" className="field !py-2" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+        <div><label className="label">{t("booking.checkOut")}</label><input type="date" lang="en-US" dir="ltr" className="field !py-2" value={to} onChange={(e) => setTo(e.target.value)} /></div>
         <div>
           <label className="label">{t("admin.updateStatus")}</label>
           <select className="field !py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
