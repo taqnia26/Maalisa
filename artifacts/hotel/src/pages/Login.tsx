@@ -14,6 +14,17 @@ export default function LoginPage({ adminMode = false }: { adminMode?: boolean }
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  function fillCreds(role: "admin" | "reception") {
+    if (role === "admin") {
+      setEmail("admin@hotel.com");
+      setPassword("admin123");
+    } else {
+      setEmail("reception@hotel.com");
+      setPassword("reception123");
+    }
+    setError(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -47,7 +58,15 @@ export default function LoginPage({ adminMode = false }: { adminMode?: boolean }
           <h1 className="font-display text-4xl text-charcoal">{adminMode ? t("admin.title") : t("auth.login.title")}</h1>
           <GoldDivider />
           <p className="text-charcoal/70 mt-3 mb-8">{t("auth.login.sub")}</p>
-          {adminMode && <div className="text-xs text-bronze bg-cream-deep px-3 py-2 mb-4 border-l-2 border-gold">{t("admin.demoCreds")}</div>}
+          {adminMode && (
+            <>
+              <div className="text-xs text-bronze bg-cream-deep px-3 py-2 mb-3 border-l-2 border-gold">{t("admin.demoCreds")}</div>
+              <div className="flex gap-2 mb-5">
+                <button type="button" onClick={() => fillCreds("admin")} className="flex-1 text-xs uppercase tracking-widest border border-gold/50 text-charcoal hover:bg-gold hover:text-cream py-2 transition" data-testid="quickfill-admin">{t("admin.quickFillAdmin")}</button>
+                <button type="button" onClick={() => fillCreds("reception")} className="flex-1 text-xs uppercase tracking-widest border border-gold/50 text-charcoal hover:bg-gold hover:text-cream py-2 transition" data-testid="quickfill-reception">{t("admin.quickFillReception")}</button>
+              </div>
+            </>
+          )}
           <div className="space-y-4">
             <div><label className="label">{t("auth.email")}</label><input type="email" required className="field" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
             <div><label className="label">{t("auth.password")}</label><input type="password" required className="field" value={password} onChange={(e) => setPassword(e.target.value)} /></div>

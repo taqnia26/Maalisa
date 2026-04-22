@@ -153,7 +153,10 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         <div className="max-w-[1400px] mx-auto px-5 md:px-10 mt-10 pt-6 border-t border-cream/10 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-cream/50">
           <div>© {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}.</div>
-          <div className="font-display italic">{t("brand.tagline")}</div>
+          <div className="flex items-center gap-4">
+            <Link href="/admin/login" className="uppercase tracking-widest text-cream/60 hover:text-gold transition" data-testid="link-staff-login">{t("footer.staffLogin")}</Link>
+            <span className="font-display italic">{t("brand.tagline")}</span>
+          </div>
         </div>
       </footer>
     </div>
