@@ -228,11 +228,11 @@ html[dir="rtl"] .nav-link:hover::after, html[dir="rtl"] .nav-link.active::after 
   position: relative; overflow: hidden; transition: all .35s ease;
   cursor: pointer;
 }
+.btn-gold { position: relative; isolation: isolate; overflow: hidden; }
 .btn-gold::before {
   content:""; position:absolute; inset:0; background: var(--charcoal);
-  transform: translateY(100%); transition: transform .4s ease; z-index: 0;
+  transform: translateY(100%); transition: transform .4s ease; z-index: -1;
 }
-.btn-gold > * { position: relative; z-index: 1; }
 .btn-gold:hover { color: var(--gold); }
 .btn-gold:hover::before { transform: translateY(0); }
 
