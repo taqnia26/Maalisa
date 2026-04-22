@@ -1,9 +1,13 @@
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { seedIfEmpty } from "./lib/seed";
 import { ensureRoomColumns } from "./routes/admin-rooms";
+
+const __here = path.dirname(fileURLToPath(import.meta.url));
+export const ATTACHED_ASSETS_DIR = path.resolve(__here, "..", "..", "..", "attached_assets");
 
 const rawPort = process.env["PORT"];
 if (!rawPort) {
@@ -15,7 +19,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 // Serve hotel images at /api/images/* so they survive the reverse proxy.
-const imagesDir = path.resolve(process.cwd(), "../../attached_assets");
+const imagesDir = ATTACHED_ASSETS_DIR;
 app.use(
   "/api/images",
   express.static(imagesDir, {
@@ -27,13 +31,8 @@ app.use(
   }),
 );
 
-await ensureRoomColumns().catch((err) => {
-  logger.error({ err }, "ensureRoomColumns failed");
-});
-await seedIfEmpty().catch((err) => {
-  logger.error({ err }, "Seed failed");
-});
-
+// Start listening immediately so the platform health check (/api/healthz) succeeds
+// even on slow cold boots. DB migration + seeding run in the background.
 app.listen(port, (err) => {
   if (err) {
     logger.error({ err }, "Error listening on port");
@@ -42,4 +41,10 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
   // eslint-disable-next-line no-console
   console.log("Admin Dashboard: http://localhost:3000/admin");
+
+  ensureRoomColumns()
+    .catch((err) => logger.error({ err }, "ensureRoomColumns failed"))
+    .then(() =>
+      seedIfEmpty().catch((err) => logger.error({ err }, "Seed failed")),
+    );
 });

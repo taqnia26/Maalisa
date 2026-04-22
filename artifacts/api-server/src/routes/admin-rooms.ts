@@ -1,5 +1,6 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
@@ -12,8 +13,11 @@ import { logger } from "../lib/logger";
 const router: IRouter = Router();
 router.use("/admin", requireAdmin());
 
-const UPLOAD_DIR = path.resolve(process.cwd(), "../../attached_assets/uploads");
-await fs.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
+const __here = path.dirname(fileURLToPath(import.meta.url));
+const UPLOAD_DIR = path.resolve(__here, "..", "..", "..", "..", "attached_assets", "uploads");
+fs.mkdir(UPLOAD_DIR, { recursive: true }).catch((err) => {
+  logger.warn({ err, UPLOAD_DIR }, "Could not pre-create upload dir; will retry on first upload");
+});
 
 /** Detect actual image type by magic bytes; returns extension or null. */
 function detectImageExt(buf: Buffer): "jpg" | "png" | "webp" | "gif" | null {
