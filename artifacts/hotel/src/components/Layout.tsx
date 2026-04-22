@@ -134,7 +134,18 @@ export function Layout({ children }: { children: ReactNode }) {
           <div>
             <h4 className="text-gold uppercase text-xs tracking-widest mb-4 font-bold">{t("footer.contactUs")}</h4>
             <ul className="space-y-3 text-sm text-cream/70">
-              <li className="flex items-start gap-2"><MapPin className="w-4 h-4 text-gold mt-0.5 flex-shrink-0" />{t("footer.address")}</li>
+              <li>
+                <a
+                  href="https://www.google.com/maps/search/?api=1&query=Al+Malqa+District%2C+Riyadh%2C+Saudi+Arabia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-2 hover:text-gold transition"
+                  data-testid="link-footer-address"
+                >
+                  <MapPin className="w-4 h-4 text-gold mt-0.5 flex-shrink-0" />
+                  <span>{t("footer.address")}</span>
+                </a>
+              </li>
               <li className="flex items-center gap-2"><Phone className="w-4 h-4 text-gold" />{t("footer.phone")}</li>
               <li className="flex items-center gap-2"><Mail className="w-4 h-4 text-gold" />{t("footer.email")}</li>
             </ul>

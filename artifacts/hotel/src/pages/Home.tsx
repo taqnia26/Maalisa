@@ -10,6 +10,7 @@ import { CountUp } from "@/components/CountUp";
 import { RoomCard } from "@/components/RoomCard";
 import { AmenityIcon } from "@/components/AmenityIcon";
 import { QuickBookWidget } from "@/components/QuickBookWidget";
+import LocationMap from "@/components/LocationMap";
 import { Star, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const SLIDES = [0, 1, 2];
@@ -184,6 +185,9 @@ export default function Home() {
 
       {/* GALLERY */}
       <Gallery />
+
+      {/* LOCATION / GOOGLE MAP */}
+      <LocationMap />
 
       {/* TESTIMONIALS */}
       <Testimonials />
