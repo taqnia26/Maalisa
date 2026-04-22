@@ -1,10 +1,16 @@
 import { MapPin, Navigation } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
-const QUERY = "Al Malqa District, Riyadh, Saudi Arabia";
-const EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(QUERY)}&hl=ar&z=14&output=embed`;
-const LINK_HREF = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(QUERY)}`;
-const DIR_HREF = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(QUERY)}`;
+// Exact coordinates of "نزل المعالي لشقق المخدومة" (resolved from the hotel's
+// shared Google Maps short link: https://maps.app.goo.gl/D4vLa3s9dTWZjDYf9)
+const LAT = 24.7860655;
+const LNG = 46.8234166;
+const COORDS = `${LAT},${LNG}`;
+const SHORT_LINK = "https://maps.app.goo.gl/D4vLa3s9dTWZjDYf9";
+
+const EMBED_SRC = `https://www.google.com/maps?q=${COORDS}&hl=ar&z=17&output=embed`;
+const LINK_HREF = SHORT_LINK;
+const DIR_HREF = `https://www.google.com/maps/dir/?api=1&destination=${COORDS}`;
 
 export default function LocationMap() {
   const { t } = useI18n();

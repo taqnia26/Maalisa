@@ -136,7 +136,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <ul className="space-y-3 text-sm text-cream/70">
               <li>
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=Al+Malqa+District%2C+Riyadh%2C+Saudi+Arabia"
+                  href="https://maps.app.goo.gl/D4vLa3s9dTWZjDYf9"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-start gap-2 hover:text-gold transition"
