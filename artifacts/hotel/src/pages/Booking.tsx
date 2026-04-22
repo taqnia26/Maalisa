@@ -8,7 +8,9 @@ import { GoldDivider } from "@/components/GoldDivider";
 import { Reveal } from "@/components/Reveal";
 import { formatSAR, nightsBetween, todayISO } from "@/lib/utils";
 import { pickImage } from "@/lib/images";
-import { Check, Calendar as CalendarIcon } from "lucide-react";
+import { Check, Calendar as CalendarIcon, CreditCard, Building2, Banknote, Wallet } from "lucide-react";
+
+type PayMethod = "card" | "mada" | "transfer" | "branch";
 
 function useQueryParam(name: string): string | null {
   const [search] = useLocation();
@@ -22,19 +24,27 @@ export default function BookingPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const initialRoomId = useQueryParam("roomId");
+  const initialCheckIn = useQueryParam("checkIn");
+  const initialCheckOut = useQueryParam("checkOut");
+  const initialGuests = useQueryParam("guests");
   const { data: rooms } = useListRooms();
   const create = useCreateBooking();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [roomId, setRoomId] = useState<number | "">(initialRoomId ? Number(initialRoomId) : "");
-  const [checkIn, setCheckIn] = useState(todayISO(1));
-  const [checkOut, setCheckOut] = useState(todayISO(3));
-  const [guests, setGuests] = useState(2);
+  const [checkIn, setCheckIn] = useState(initialCheckIn || todayISO(1));
+  const [checkOut, setCheckOut] = useState(initialCheckOut || todayISO(3));
+  const [guests, setGuests] = useState(initialGuests ? Number(initialGuests) : 2);
   const [mode, setMode] = useState<"guest" | "account">(user ? "account" : "guest");
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [notes, setNotes] = useState("");
+  const [payMethod, setPayMethod] = useState<PayMethod>("card");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
 
@@ -63,10 +73,25 @@ export default function BookingPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t("common.invalidEmail");
     return null;
   }
+  function validateStep3(): string | null {
+    if (payMethod === "card" || payMethod === "mada") {
+      if (!cardNumber || cardNumber.replace(/\s/g, "").length < 12) return t("common.required");
+      if (!cardName) return t("common.required");
+      if (!cardExpiry || !/^\d{2}\/\d{2}$/.test(cardExpiry)) return t("common.required");
+      if (!cardCvv || cardCvv.length < 3) return t("common.required");
+    }
+    return null;
+  }
 
   async function submit() {
     setError(null);
     try {
+      const payLabel =
+        payMethod === "card" ? "Visa/Mastercard"
+        : payMethod === "mada" ? "Mada"
+        : payMethod === "transfer" ? "Bank Transfer"
+        : "Pay at Branch";
+      const composedNotes = `Payment: ${payLabel}${notes ? " | " + notes : ""}`;
       const res = await create.mutateAsync({
         data: {
           roomId: Number(roomId),
@@ -76,29 +101,41 @@ export default function BookingPage() {
           guestName: name,
           guestEmail: email,
           guestPhone: phone,
-          notes: notes || undefined,
+          notes: composedNotes,
         },
       });
       setReference(res.reference);
       qc.invalidateQueries({ queryKey: getListBookingsQueryKey() });
-      setStep(3);
+      setStep(4);
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.error");
       setError(msg);
     }
   }
 
-  if (step === 3 && reference) {
+  if (step === 4 && reference) {
     return (
-      <section className="min-h-screen pt-32 pb-20 px-5 bg-cream flex items-center">
-        <div className="max-w-2xl mx-auto text-center bg-white border border-cream-deep p-12 shadow-md">
-          <div className="w-20 h-20 mx-auto rounded-full border-2 border-gold flex items-center justify-center mb-6">
-            <Check className="w-10 h-10 text-gold" />
+      <section className="confirm-hero min-h-screen pt-32 pb-20 px-5 flex items-center">
+        {/* Floating sparks */}
+        {Array.from({ length: 18 }).map((_, i) => {
+          const left = (i * 53) % 100;
+          const top = (i * 37) % 100;
+          const delay = (i * 0.3) % 6;
+          return (
+            <span key={i} className="confirm-spark" style={{ left: `${left}%`, top: `${top}%`, animationDelay: `${delay}s` }} />
+          );
+        })}
+        <div className="max-w-2xl mx-auto text-center confirm-card p-12 relative z-10">
+          <div className="confirm-check mx-auto mb-6">
+            <Check className="w-12 h-12 text-charcoal" strokeWidth={3} />
           </div>
           <h1 className="font-display text-4xl text-charcoal mb-2">{t("booking.success")}</h1>
+          <p className="text-charcoal/70 text-sm mt-2">{t("booking.successSub")}</p>
           <GoldDivider />
-          <div className="mt-6 text-charcoal/70">{t("booking.reference")}</div>
-          <div className="font-display text-3xl text-gold mt-1 tracking-widest">{reference}</div>
+          <div className="mt-6 text-charcoal/70 text-xs uppercase tracking-widest">{t("booking.reference")}</div>
+          <div className="mt-2 confirm-ref">
+            <span className="font-display text-3xl text-gold tracking-widest">{reference}</span>
+          </div>
           <div className="mt-8 text-sm text-charcoal/70 grid grid-cols-2 gap-4">
             <div><div className="text-xs uppercase tracking-widest text-charcoal/50">{t("booking.checkIn")}</div><div className="font-medium">{checkIn}</div></div>
             <div><div className="text-xs uppercase tracking-widest text-charcoal/50">{t("booking.checkOut")}</div><div className="font-medium">{checkOut}</div></div>
@@ -122,13 +159,7 @@ export default function BookingPage() {
             <div className="text-gold text-xs uppercase tracking-[0.3em] mb-2">{t("nav.bookNow")}</div>
             <h1 className="font-display text-4xl md:text-5xl text-charcoal">{t("booking.title")}</h1>
             <GoldDivider />
-            <div className="flex items-center justify-center gap-2 mt-6 text-xs uppercase tracking-widest text-charcoal/60">
-              <span className={step >= 1 ? "text-gold font-bold" : ""}>1 {t("booking.title")}</span>
-              <span>—</span>
-              <span className={step >= 2 ? "text-gold font-bold" : ""}>2 {t("booking.guestInfo")}</span>
-              <span>—</span>
-              <span className={step >= 3 ? "text-gold font-bold" : ""}>3 {t("booking.confirm")}</span>
-            </div>
+            <Stepper step={step} t={t} />
           </div>
         </Reveal>
 
@@ -170,6 +201,7 @@ export default function BookingPage() {
                 </button>
               </div>
             )}
+
             {step === 2 && (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
@@ -189,8 +221,82 @@ export default function BookingPage() {
                 {error && <div className="text-destructive text-sm">{error}</div>}
                 <div className="flex gap-3">
                   <button onClick={() => setStep(1)} className="btn-outline-gold">←</button>
-                  <button onClick={() => { const v = validateStep2(); if (v) { setError(v); return; } setError(null); submit(); }} disabled={create.isPending} className="btn-gold flex-1">
-                    {create.isPending ? t("common.loading") : t("booking.confirm")}
+                  <button onClick={() => { const v = validateStep2(); if (v) { setError(v); return; } setError(null); setStep(3); }} className="btn-gold flex-1">
+                    {t("booking.continue")}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-5">
+                <div>
+                  <div className="label mb-3">{t("booking.payment")}</div>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <PayTile active={payMethod === "card"} onClick={() => setPayMethod("card")} icon={<CreditCard className="w-5 h-5" />} title={t("booking.payCard")} desc={t("booking.payCardDesc")} />
+                    <PayTile active={payMethod === "mada"} onClick={() => setPayMethod("mada")} icon={<Wallet className="w-5 h-5" />} title={t("booking.payMada")} desc={t("booking.payMadaDesc")} />
+                    <PayTile active={payMethod === "transfer"} onClick={() => setPayMethod("transfer")} icon={<Building2 className="w-5 h-5" />} title={t("booking.payTransfer")} desc={t("booking.payTransferDesc")} />
+                    <PayTile active={payMethod === "branch"} onClick={() => setPayMethod("branch")} icon={<Banknote className="w-5 h-5" />} title={t("booking.payBranch")} desc={t("booking.payBranchDesc")} />
+                  </div>
+                </div>
+
+                {(payMethod === "card" || payMethod === "mada") && (
+                  <div className="space-y-4 bg-cream/40 border border-cream-deep p-4">
+                    <div>
+                      <label className="label">{t("booking.cardNumber")}</label>
+                      <input className="field" placeholder="•••• •••• •••• ••••" maxLength={19}
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim())}
+                      />
+                    </div>
+                    <div>
+                      <label className="label">{t("booking.cardName")}</label>
+                      <input className="field" value={cardName} onChange={(e) => setCardName(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="label">{t("booking.cardExpiry")}</label>
+                        <input className="field" placeholder="MM/YY" maxLength={5}
+                          value={cardExpiry}
+                          onChange={(e) => {
+                            let v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                            if (v.length >= 3) v = v.slice(0, 2) + "/" + v.slice(2);
+                            setCardExpiry(v);
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="label">{t("booking.cardCvv")}</label>
+                        <input className="field" maxLength={4} value={cardCvv} onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, ""))} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {payMethod === "transfer" && (
+                  <div className="bg-cream/40 border border-cream-deep p-5 text-sm text-charcoal/80 space-y-2">
+                    <div className="flex justify-between"><span className="text-charcoal/60">{t("booking.bankName")}:</span><span className="font-medium">SNB / البنك الأهلي</span></div>
+                    <div className="flex justify-between"><span className="text-charcoal/60">{t("booking.iban")}:</span><span className="font-mono text-gold">SA00 0000 0000 0000 0000 0000</span></div>
+                    <div className="text-xs text-charcoal/60 pt-2 border-t border-cream-deep">{t("booking.transferNote")}</div>
+                  </div>
+                )}
+
+                {payMethod === "branch" && (
+                  <div className="bg-cream/40 border border-cream-deep p-5 text-sm text-charcoal/80 flex items-start gap-3">
+                    <Banknote className="w-5 h-5 text-gold flex-shrink-0 mt-0.5" />
+                    <div>{t("booking.branchNote")}</div>
+                  </div>
+                )}
+
+                {error && <div className="text-destructive text-sm">{error}</div>}
+                <div className="flex gap-3">
+                  <button onClick={() => setStep(2)} className="btn-outline-gold">←</button>
+                  <button
+                    onClick={() => { const v = validateStep3(); if (v) { setError(v); return; } setError(null); submit(); }}
+                    disabled={create.isPending}
+                    className="btn-gold flex-1"
+                  >
+                    {create.isPending ? t("common.loading") : t("booking.payNow")}
                   </button>
                 </div>
               </div>
@@ -225,5 +331,40 @@ export default function BookingPage() {
         </div>
       </div>
     </section>
+  );
+}
+
+function Stepper({ step, t }: { step: 1 | 2 | 3 | 4; t: (k: string) => string }) {
+  const items: Array<{ n: number; label: string }> = [
+    { n: 1, label: t("booking.steps.dates") },
+    { n: 2, label: t("booking.steps.info") },
+    { n: 3, label: t("booking.steps.pay") },
+    { n: 4, label: t("booking.steps.done") },
+  ];
+  return (
+    <div className="flex items-center justify-center gap-2 mt-6 text-xs uppercase tracking-widest">
+      {items.map((it, i) => (
+        <div key={it.n} className="flex items-center gap-2">
+          <span className={`flex items-center gap-1.5 ${step >= (it.n as 1 | 2 | 3 | 4) ? "text-gold font-bold" : "text-charcoal/40"}`}>
+            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full border ${step >= (it.n as 1 | 2 | 3 | 4) ? "bg-gold text-charcoal border-gold" : "border-charcoal/20"}`}>{it.n}</span>
+            {it.label}
+          </span>
+          {i < items.length - 1 && <span className="text-charcoal/30">—</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PayTile({ active, onClick, icon, title, desc }: { active: boolean; onClick: () => void; icon: React.ReactNode; title: string; desc: string }) {
+  return (
+    <button type="button" onClick={onClick} className={`pay-tile ${active ? "active" : ""}`}>
+      <span className="pay-tile-icon">{icon}</span>
+      <span className="flex-1">
+        <span className="block font-display text-base text-charcoal">{title}</span>
+        <span className="block text-xs text-charcoal/60 mt-0.5">{desc}</span>
+      </span>
+      {active && <span className="text-gold"><Check className="w-4 h-4" /></span>}
+    </button>
   );
 }

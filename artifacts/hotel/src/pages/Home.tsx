@@ -9,6 +9,7 @@ import { GoldDivider } from "@/components/GoldDivider";
 import { CountUp } from "@/components/CountUp";
 import { RoomCard } from "@/components/RoomCard";
 import { AmenityIcon } from "@/components/AmenityIcon";
+import { QuickBookWidget } from "@/components/QuickBookWidget";
 import { Star, ArrowRight, ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 const SLIDES = [0, 1, 2];
@@ -92,6 +93,15 @@ export default function Home() {
           <div key={`${slide}-${paused}`} className="h-full bg-gold" style={{ animation: paused ? "none" : "progress 5s linear forwards" }} />
         </div>
         <style>{`@keyframes progress { from { width:0% } to { width:100% } }`}</style>
+      </section>
+
+      {/* QUICK BOOK — overlaps hero bottom for smooth flow */}
+      <section className="px-5 -mt-16 relative z-30">
+        <div className="max-w-[1200px] mx-auto">
+          <Reveal>
+            <QuickBookWidget />
+          </Reveal>
+        </div>
       </section>
 
       {/* WELCOME */}
