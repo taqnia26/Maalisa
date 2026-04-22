@@ -1,6 +1,42 @@
 import { db, roomsTable, usersTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
 import { hashPassword } from "./auth";
 import { logger } from "./logger";
+
+/**
+ * Idempotent schema migrations for staff/branches/payments features.
+ * Safe to run on every boot.
+ */
+export async function ensureExtendedSchema(): Promise<void> {
+  await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id integer`);
+  await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS paid_amount numeric(10,2) NOT NULL DEFAULT '0'`);
+  await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'unpaid'`);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS branches (
+      id serial PRIMARY KEY,
+      name text NOT NULL,
+      name_ar text,
+      address text,
+      phone text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS payments (
+      id serial PRIMARY KEY,
+      booking_id integer NOT NULL,
+      amount numeric(10,2) NOT NULL,
+      method text NOT NULL DEFAULT 'cash',
+      branch_id integer,
+      branch_name text,
+      received_by_id integer,
+      received_by_name text,
+      note text,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS payments_booking_id_idx ON payments (booking_id)`);
+}
 
 const HOTEL_IMAGES = [
   "/api/images/hotel-1.jpeg",
@@ -126,6 +162,17 @@ export async function seedIfEmpty(): Promise<void> {
       passwordHash: await hashPassword("admin123"),
       phone: "+966500000000",
       role: "admin",
+    });
+  }
+  const receptionEmail = "reception@hotel.com";
+  if (!admins.some((u) => u.email === receptionEmail)) {
+    logger.info("Seeding reception user");
+    await db.insert(usersTable).values({
+      name: "موظف الاستقبال",
+      email: receptionEmail,
+      passwordHash: await hashPassword("reception123"),
+      phone: "+966500000001",
+      role: "reception",
     });
   }
 }

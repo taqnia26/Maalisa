@@ -3,13 +3,15 @@ import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
 import { db, roomsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
-import { requireAdmin } from "../lib/auth";
+import { requireAdmin, requireStaff } from "../lib/auth";
 import { serializeRoom } from "./rooms";
 import { logger } from "../lib/logger";
 import { getUploadsFile } from "../lib/gcs";
 
 const router: IRouter = Router();
-router.use("/admin", requireAdmin());
+// Staff (admin + reception) can upload images, create, and edit rooms.
+// Only admin can DELETE rooms (enforced per-route below).
+router.use("/admin", requireStaff());
 
 /** Detect actual image type by magic bytes; returns extension or null. */
 function detectImageExt(buf: Buffer): "jpg" | "png" | "webp" | "gif" | null {
@@ -209,7 +211,7 @@ router.patch("/admin/rooms/:id", async (req, res): Promise<void> => {
   }
 });
 
-router.delete("/admin/rooms/:id", async (req, res): Promise<void> => {
+router.delete("/admin/rooms/:id", requireAdmin(), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
     res.status(400).json({ error: "Invalid id" });

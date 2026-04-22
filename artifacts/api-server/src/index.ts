@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import express from "express";
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedIfEmpty } from "./lib/seed";
+import { seedIfEmpty, ensureExtendedSchema } from "./lib/seed";
 import { ensureRoomColumns } from "./routes/admin-rooms";
 import { getUploadsFile } from "./lib/gcs";
 
@@ -78,6 +78,11 @@ app.listen(port, (err) => {
 
   ensureRoomColumns()
     .catch((err) => logger.error({ err }, "ensureRoomColumns failed"))
+    .then(() =>
+      ensureExtendedSchema().catch((err) =>
+        logger.error({ err }, "ensureExtendedSchema failed"),
+      ),
+    )
     .then(() =>
       seedIfEmpty().catch((err) => logger.error({ err }, "Seed failed")),
     );

@@ -32,6 +32,8 @@ async function serialize(b: typeof bookingsTable.$inferSelect) {
     guestPhone: b.guestPhone,
     notes: b.notes ?? undefined,
     totalPrice: Number(b.totalPrice),
+    paidAmount: Number(b.paidAmount ?? 0),
+    paymentStatus: b.paymentStatus ?? "unpaid",
     status: b.status,
     createdAt: b.createdAt.toISOString(),
   };
@@ -43,14 +45,14 @@ router.get("/bookings", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const rows =
-    user.role === "admin"
-      ? await db.select().from(bookingsTable).orderBy(desc(bookingsTable.createdAt))
-      : await db
-          .select()
-          .from(bookingsTable)
-          .where(eq(bookingsTable.userId, user.id))
-          .orderBy(desc(bookingsTable.createdAt));
+  const isStaff = user.role === "admin" || user.role === "reception";
+  const rows = isStaff
+    ? await db.select().from(bookingsTable).orderBy(desc(bookingsTable.createdAt))
+    : await db
+        .select()
+        .from(bookingsTable)
+        .where(eq(bookingsTable.userId, user.id))
+        .orderBy(desc(bookingsTable.createdAt));
   const result = await Promise.all(rows.map(serialize));
   res.json(result);
 });
@@ -132,8 +134,9 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  // Authorization: admins can read any booking; regular users only their own.
-  if (user.role !== "admin" && b.userId !== user.id) {
+  // Authorization: staff (admin/reception) can read any booking; regular users only their own.
+  const isStaff = user.role === "admin" || user.role === "reception";
+  if (!isStaff && b.userId !== user.id) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -159,11 +162,12 @@ router.patch("/bookings/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  if (user.role !== "admin" && existing.userId !== user.id) {
+  const isStaff = user.role === "admin" || user.role === "reception";
+  if (!isStaff && existing.userId !== user.id) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
-  if (user.role !== "admin" && status !== "cancelled") {
+  if (!isStaff && status !== "cancelled") {
     res.status(403).json({ error: "Guests may only cancel" });
     return;
   }

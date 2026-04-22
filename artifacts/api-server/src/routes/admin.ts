@@ -1,13 +1,15 @@
 import { Router, type IRouter } from "express";
 import { db, bookingsTable, roomsTable, usersTable } from "@workspace/db";
 import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
-import { requireAdmin } from "../lib/auth";
+import { requireAdmin, requireStaff } from "../lib/auth";
 
 const router: IRouter = Router();
 
-router.use("/admin", requireAdmin());
+// Reception (staff) needs operational endpoints (calendar, recent-bookings, guests).
+// Finance / hotel-wide analytics (stats, timeseries) are admin-only and gated per-route.
+router.use("/admin", requireStaff());
 
-router.get("/admin/stats", async (_req, res): Promise<void> => {
+router.get("/admin/stats", requireAdmin(), async (_req, res): Promise<void> => {
   const allBookings = await db.select().from(bookingsTable);
   const rooms = await db.select().from(roomsTable);
   const guests = await db.select().from(usersTable).where(eq(usersTable.role, "guest"));
@@ -32,7 +34,7 @@ router.get("/admin/stats", async (_req, res): Promise<void> => {
   });
 });
 
-router.get("/admin/bookings-timeseries", async (_req, res): Promise<void> => {
+router.get("/admin/bookings-timeseries", requireAdmin(), async (_req, res): Promise<void> => {
   const days = 30;
   const start = new Date();
   start.setUTCHours(0, 0, 0, 0);

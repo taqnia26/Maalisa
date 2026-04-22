@@ -58,6 +58,19 @@ export function requireAdmin() {
   };
 }
 
+/** Allow both admin and reception staff. */
+export function requireStaff() {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const user = await getUserFromRequest(req);
+    if (!user || (user.role !== "admin" && user.role !== "reception")) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    (req as Request & { user: typeof user }).user = user;
+    next();
+  };
+}
+
 export function setSessionCookie(res: Response, token: string) {
   res.cookie("session", token, {
     httpOnly: true,
