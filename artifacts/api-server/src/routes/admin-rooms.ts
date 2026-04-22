@@ -1,6 +1,3 @@
-import path from "node:path";
-import fs from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { Router, type IRouter, type Request } from "express";
 import multer from "multer";
@@ -9,15 +6,10 @@ import { eq, sql } from "drizzle-orm";
 import { requireAdmin } from "../lib/auth";
 import { serializeRoom } from "./rooms";
 import { logger } from "../lib/logger";
+import { getUploadsFile } from "../lib/gcs";
 
 const router: IRouter = Router();
 router.use("/admin", requireAdmin());
-
-const __here = path.dirname(fileURLToPath(import.meta.url));
-const UPLOAD_DIR = path.resolve(__here, "..", "..", "..", "..", "attached_assets", "uploads");
-fs.mkdir(UPLOAD_DIR, { recursive: true }).catch((err) => {
-  logger.warn({ err, UPLOAD_DIR }, "Could not pre-create upload dir; will retry on first upload");
-});
 
 /** Detect actual image type by magic bytes; returns extension or null. */
 function detectImageExt(buf: Buffer): "jpg" | "png" | "webp" | "gif" | null {
@@ -63,7 +55,14 @@ router.post(
           return;
         }
         const name = `room-${Date.now()}-${randomBytes(4).toString("hex")}.${ext}`;
-        await fs.writeFile(path.join(UPLOAD_DIR, name), f.buffer);
+        const file = getUploadsFile(name);
+        const contentType =
+          ext === "jpg" ? "image/jpeg" : ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/gif";
+        await file.save(f.buffer, {
+          contentType,
+          resumable: false,
+          metadata: { cacheControl: "public, max-age=604800" },
+        });
         urls.push(`/api/images/uploads/${name}`);
       }
       res.json({ urls });
