@@ -57,9 +57,9 @@ export default function Home() {
         <div className="relative z-10 h-full flex items-center justify-center text-center text-cream px-5">
           <div className="max-w-4xl">
             <div className="text-gold text-xs uppercase tracking-[0.4em] mb-6">
-              {[...t(`hero.slide${slide + 1}.kicker`)].map((c, i) => (
-                <span key={`${slide}-k-${i}`} className="hero-word" style={{ animationDelay: `${0.1 + i * 0.02}s` }}>{c}</span>
-              ))}
+              <span key={`${slide}-k`} className="hero-word inline-block" style={{ animationDelay: "0.1s" }}>
+                {t(`hero.slide${slide + 1}.kicker`)}
+              </span>
             </div>
             <h1 className="font-display text-5xl md:text-7xl text-cream leading-tight mb-6">
               {t(`hero.slide${slide + 1}.title`).split(" ").map((w, i) => (
