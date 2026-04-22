@@ -1,6 +1,6 @@
 import { Link, useLocation, Redirect } from "wouter";
 import type { ReactNode } from "react";
-import { LayoutDashboard, BedDouble, CalendarDays, Users, Settings, LogOut, Globe, BookOpenCheck } from "lucide-react";
+import { LayoutDashboard, BedDouble, CalendarDays, Users, Settings, LogOut, Globe, BookOpenCheck, Wallet } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
@@ -16,6 +16,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { href: "/admin", label: t("admin.dashboard"), icon: LayoutDashboard },
     { href: "/admin/rooms", label: t("admin.rooms"), icon: BedDouble },
     { href: "/admin/bookings", label: t("admin.bookings"), icon: BookOpenCheck },
+    { href: "/admin/finance", label: t("admin.finance"), icon: Wallet },
     { href: "/admin/guests", label: t("admin.guests"), icon: Users },
     { href: "/admin/calendar", label: t("admin.calendar"), icon: CalendarDays },
     { href: "/admin/settings", label: t("admin.settings"), icon: Settings },

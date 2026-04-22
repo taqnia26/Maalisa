@@ -48,7 +48,7 @@ export function RoomCard({ room }: { room: RoomLike }) {
       onMouseLeave={reset}
       className="tilt-card bg-white shadow-sm hover:shadow-xl transition-shadow duration-500 overflow-hidden"
     >
-      <div className="relative h-64 overflow-hidden bg-charcoal">
+      <div className="img-fx img-fx-shine relative h-64 bg-charcoal">
         <img src={img} alt={name} className="tilt-img absolute inset-0 w-full h-full object-cover" loading="lazy" />
         <div className="absolute top-3 ltr:left-3 rtl:right-3">
           <span className="badge bg-charcoal/80 text-gold border-gold">{t(`type.${room.type}`)}</span>

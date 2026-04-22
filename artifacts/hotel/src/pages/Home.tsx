@@ -49,7 +49,7 @@ export default function Home() {
         <div id="hero-parallax" className="absolute inset-0">
           {SLIDES.map((s, i) => (
             <div key={i} className={`slide ${slide === i ? "active" : ""}`}>
-              <div className="slide-img" style={{ backgroundImage: `url(${pickImage(s)})` }} />
+              <div className="slide-img" style={{ backgroundImage: `url(${pickImage(s)})`, filter: "saturate(1.1) contrast(1.08) brightness(0.95)" }} />
               <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(26,26,46,0.30), rgba(26,26,46,0.65))" }} />
             </div>
           ))}
@@ -190,8 +190,8 @@ export default function Home() {
 
       {/* CTA BANNER */}
       <section className="relative py-24 px-5 overflow-hidden bg-charcoal">
-        <div className="absolute inset-0" style={{ backgroundImage: `url(${pickImage(7)})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.4 }} />
-        <div className="absolute inset-0 bg-charcoal/60" />
+        <div className="absolute inset-0" style={{ backgroundImage: `url(/api/images/hotel-cta.png)`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.55, filter: "saturate(1.15) contrast(1.05)" }} />
+        <div className="absolute inset-0 bg-gradient-to-b from-charcoal/40 via-charcoal/55 to-charcoal/85" />
         <div className="relative max-w-3xl mx-auto text-center text-cream">
           <Reveal>
             <h2 className="font-display text-4xl md:text-5xl mb-4">{t("cta.banner.title")}</h2>
@@ -219,9 +219,8 @@ function Gallery() {
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {hotelImages.map((src, i) => (
-            <button key={src} onClick={() => setOpen(i)} className={`group relative overflow-hidden ${i === 0 || i === 5 ? "row-span-2 col-span-2 md:col-span-2 md:row-span-2" : ""}`}>
-              <img src={src} alt="" loading="lazy" className="w-full h-full min-h-[180px] object-cover transition-transform duration-700 group-hover:scale-110" />
-              <div className="absolute inset-0 bg-charcoal/0 group-hover:bg-charcoal/30 transition" />
+            <button key={src} onClick={() => setOpen(i)} className={`img-fx img-fx-shine group relative ${i === 0 || i === 5 ? "row-span-2 col-span-2 md:col-span-2 md:row-span-2" : ""}`}>
+              <img src={src} alt="" loading="lazy" className="w-full h-full min-h-[180px] object-cover" />
             </button>
           ))}
         </div>

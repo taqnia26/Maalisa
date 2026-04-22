@@ -19,6 +19,7 @@ import Profile from "@/pages/Profile";
 import AdminDashboard from "@/pages/admin/Dashboard";
 import AdminRooms from "@/pages/admin/Rooms";
 import AdminBookings from "@/pages/admin/Bookings";
+import AdminFinance from "@/pages/admin/Finance";
 import AdminGuests from "@/pages/admin/Guests";
 import AdminCalendar from "@/pages/admin/Calendar";
 import AdminSettings from "@/pages/admin/Settings";
@@ -36,6 +37,7 @@ function PublicRouter() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/rooms" component={AdminRooms} />
       <Route path="/admin/bookings" component={AdminBookings} />
+      <Route path="/admin/finance" component={AdminFinance} />
       <Route path="/admin/guests" component={AdminGuests} />
       <Route path="/admin/calendar" component={AdminCalendar} />
       <Route path="/admin/settings" component={AdminSettings} />

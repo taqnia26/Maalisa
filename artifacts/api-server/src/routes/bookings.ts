@@ -116,6 +116,11 @@ router.post("/bookings", async (req, res): Promise<void> => {
 });
 
 router.get("/bookings/:id", async (req, res): Promise<void> => {
+  const user = await getUserFromRequest(req);
+  if (!user) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const id = parseInt(raw ?? "", 10);
   if (Number.isNaN(id)) {
@@ -125,6 +130,11 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
   const [b] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id));
   if (!b) {
     res.status(404).json({ error: "Not found" });
+    return;
+  }
+  // Authorization: admins can read any booking; regular users only their own.
+  if (user.role !== "admin" && b.userId !== user.id) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
   res.json(await serialize(b));

@@ -27,8 +27,8 @@ export function CountUp({ to, duration = 1800, decimals = 0, suffix = "" }: { to
     return () => io.disconnect();
   }, [to, duration]);
   return (
-    <span ref={ref}>
-      {val.toFixed(decimals)}
+    <span ref={ref} dir="ltr" style={{ unicodeBidi: "isolate" }}>
+      {new Intl.NumberFormat("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(val)}
       {suffix}
     </span>
   );

@@ -9,6 +9,21 @@ export function formatSAR(amount: number): string {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
 }
 
+// Force Western (Latin) numerals everywhere on the site (regardless of UI language)
+export function fmtNum(n: number, decimals = 0): string {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: decimals, minimumFractionDigits: decimals }).format(n);
+}
+
+// Convert any string containing Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) to Western digits
+export function toLatinDigits(s: string): string {
+  return s.replace(/[٠-٩۰-۹]/g, (d) => {
+    const code = d.charCodeAt(0);
+    if (code >= 0x0660 && code <= 0x0669) return String(code - 0x0660);
+    if (code >= 0x06F0 && code <= 0x06F9) return String(code - 0x06F0);
+    return d;
+  });
+}
+
 export function nightsBetween(checkIn: string, checkOut: string): number {
   const a = new Date(checkIn).getTime();
   const b = new Date(checkOut).getTime();

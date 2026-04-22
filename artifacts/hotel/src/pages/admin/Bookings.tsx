@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { useListBookings, useUpdateBookingStatus, getListBookingsQueryKey } from "@workspace/api-client-react";
+import { useListBookings, useUpdateBookingStatus, getListBookingsQueryKey, UpdateBookingStatusBodyStatus } from "@workspace/api-client-react";
+type StatusT = UpdateBookingStatusBodyStatus;
 import { useQueryClient } from "@tanstack/react-query";
 import { useI18n } from "@/lib/i18n";
 import { AdminLayout } from "@/components/AdminLayout";
@@ -7,7 +8,21 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { formatSAR } from "@/lib/utils";
 import { Download, X } from "lucide-react";
 
-const STATUSES = ["pending", "confirmed", "checked_in", "checked_out", "cancelled"];
+const STATUSES: StatusT[] = [
+  UpdateBookingStatusBodyStatus.pending,
+  UpdateBookingStatusBodyStatus.confirmed,
+  UpdateBookingStatusBodyStatus.checked_in,
+  UpdateBookingStatusBodyStatus.checked_out,
+  UpdateBookingStatusBodyStatus.cancelled,
+];
+
+export const STATUS_I18N_KEYS: Record<string, string> = {
+  pending: "admin.statusPending",
+  confirmed: "admin.statusConfirmed",
+  checked_in: "admin.statusCheckedIn",
+  checked_out: "admin.statusCheckedOut",
+  cancelled: "admin.statusCancelled",
+};
 
 export default function AdminBookings() {
   const { t } = useI18n();
@@ -41,7 +56,7 @@ export default function AdminBookings() {
     URL.revokeObjectURL(url);
   }
 
-  async function setStatusFor(id: number, s: string) {
+  async function setStatusFor(id: number, s: StatusT) {
     await update.mutateAsync({ id, data: { status: s } });
     qc.invalidateQueries({ queryKey: getListBookingsQueryKey() });
   }
@@ -58,7 +73,7 @@ export default function AdminBookings() {
           <label className="label">{t("admin.updateStatus")}</label>
           <select className="field !py-2" value={status} onChange={(e) => setStatus(e.target.value)}>
             <option value="">—</option>
-            {STATUSES.map((s) => <option key={s} value={s}>{t(`admin.status${s.charAt(0).toUpperCase()}${s.slice(1).replace("_", "")}`)}</option>)}
+            {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_I18N_KEYS[s] ?? s)}</option>)}
           </select>
         </div>
         <button onClick={exportCsv} className="btn-outline-gold !py-2 !px-4 !text-xs"><Download className="w-3.5 h-3.5" />{t("admin.export")}</button>
@@ -87,8 +102,8 @@ export default function AdminBookings() {
                 <td className="p-3">{b.checkOut}</td>
                 <td className="p-3 text-gold font-bold">{formatSAR(b.totalPrice)}</td>
                 <td className="p-3">
-                  <select value={b.status} onChange={(e) => setStatusFor(b.id, e.target.value)} className="field !py-1 !px-2 !text-xs">
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  <select value={b.status} onChange={(e) => setStatusFor(b.id, e.target.value as StatusT)} className="field !py-1 !px-2 !text-xs">
+                    {STATUSES.map((s) => <option key={s} value={s}>{t(STATUS_I18N_KEYS[s] ?? s)}</option>)}
                   </select>
                 </td>
                 <td className="p-3"><button onClick={() => setOpen(b.id)} className="text-gold text-xs hover:underline">{t("admin.viewDetails")}</button></td>

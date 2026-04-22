@@ -480,6 +480,56 @@ html[dir="rtl"] .marquee { animation-name: marqueeRtl; }
 .cal-booked { background: rgba(198,40,40,.2); color: #B71C1C; }
 .cal-maintenance { background: rgba(184,134,11,.22); color: #6D4C00; }
 
+/* Force Western numerals across the whole site (even in Arabic locale) */
+html, body, input, select, textarea, button {
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+/* Force date inputs to display Western format/digits */
+input[type="date"], input[type="month"], input[type="datetime-local"], input[type="time"], input[type="number"] {
+  direction: ltr;
+  text-align: start;
+}
+[dir="rtl"] input[type="date"], [dir="rtl"] input[type="month"] {
+  text-align: end;
+}
+
+/* Image hover/filter effects for Home page */
+.img-fx {
+  overflow: hidden;
+  position: relative;
+}
+.img-fx img {
+  transition: transform .8s cubic-bezier(.22,1,.36,1), filter .5s ease;
+  filter: saturate(1.05) contrast(1.05) brightness(.97);
+  will-change: transform;
+}
+.img-fx:hover img {
+  transform: scale(1.08);
+  filter: saturate(1.2) contrast(1.12) brightness(1.02);
+}
+.img-fx::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(26,26,46,0.35) 100%);
+  pointer-events: none;
+  opacity: .6;
+  transition: opacity .4s ease;
+}
+.img-fx:hover::after { opacity: .85; }
+
+/* Gold sheen on hover */
+.img-fx-shine::before {
+  content: "";
+  position: absolute; top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(105deg, transparent 30%, rgba(201,168,76,0.25) 50%, transparent 70%);
+  transition: left .9s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.img-fx-shine:hover::before { left: 130%; }
+
 /* Sticky header shadow */
 .header-scrolled { box-shadow: 0 6px 18px rgba(26,26,46,0.10); }
 
