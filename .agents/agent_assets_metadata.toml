@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "OWiepXqDaTWx_IIwPbqEn"
+uri = "file://artifacts/hotel/src/assets/images/room1.png"
+type = "image"
+title = "Luxury hotel room king bed"
+
+[[generated]]
+id = "6bq0AlLoMeNkJYDp102A0"
+uri = "file://artifacts/hotel/src/assets/images/room2.png"
+type = "image"
+title = "Luxury twin beds hotel room"
+
+[[generated]]
+id = "HyXl4tOQdMcLVdOsftukb"
+uri = "file://artifacts/hotel/src/assets/images/room3.png"
+type = "image"
+title = "Opulent hotel suite living room"

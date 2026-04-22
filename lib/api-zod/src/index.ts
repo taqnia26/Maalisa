@@ -1,2 +1,22 @@
 export * from "./generated/api";
-export * from "./generated/types";
+export type {
+  Room,
+  RoomStatus,
+  RoomType,
+  Booking,
+  BookingStatus,
+  User,
+  UserRole,
+  AuthResponse,
+  AdminStats,
+  Guest,
+  HealthStatus,
+  AdminBookingsTimeseries200Item,
+  AdminCalendar200Item,
+  AdminCalendar200ItemStatus,
+  AdminCalendarParams,
+  ListRoomsParams,
+  ListRoomsType,
+  Logout200,
+  UpdateBookingStatusBodyStatus,
+} from "./generated/types";
