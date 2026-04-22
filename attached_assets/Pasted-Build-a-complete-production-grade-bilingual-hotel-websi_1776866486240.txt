@@ -1,0 +1,230 @@
+Build a complete, production-grade bilingual hotel website for "نزل المعالي / Nuzul Al-Ma'ali" with a full booking system and dynamic admin dashboard.
+
+---
+
+## TECH STACK
+- Frontend: HTML5, CSS3, Vanilla JavaScript (or React if preferred)
+- Backend: Node.js + Express
+- Database: SQLite (via better-sqlite3) or JSON file-based for simplicity
+- No external CSS frameworks — write custom CSS only
+- Fonts: Google Fonts — "Tajawal" for Arabic, "Cormorant Garamond" for English headings, "Lato" for body text
+
+---
+
+## DESIGN SYSTEM
+
+**Color Palette:**
+- Primary Gold: #C9A84C
+- Deep Charcoal: #1A1A2E
+- Warm Cream: #F5F0E8
+- Accent Bronze: #8B6914
+- White: #FFFFFF
+- Dark Overlay: rgba(26,26,46,0.7)
+
+**Aesthetic:** Luxury boutique hotel — warm gold tones on deep charcoal, editorial layout, refined and opulent. Every section must feel premium.
+
+**Typography:**
+- Arabic: Tajawal (weights 300, 400, 700)
+- English Headings: Cormorant Garamond (italic + regular)
+- Body: Lato
+
+---
+
+## BILINGUAL SUPPORT (AR/EN)
+
+- Full RTL for Arabic, LTR for English
+- Language toggle button fixed in the navbar (AR | EN)
+- All text stored in a `translations.js` object — switching language updates ALL text on the page without reload
+- Default language: Arabic
+- When Arabic is active: `dir="rtl"` on `<html>`, font switches to Tajawal
+- When English is active: `dir="ltr"`, font switches to Cormorant/Lato
+
+---
+
+## IMAGES
+
+The user will provide hotel images. Place them as follows:
+- **Hero Slider**: use images named `hero-1.jpg`, `hero-2.jpg`, `hero-3.jpg` (or whatever the user uploads — detect all uploaded images and use them)
+- **Rooms section**: assign images to room cards
+- **Gallery section**: use remaining images in a masonry grid
+- **All images**: apply a subtle parallax or zoom-in animation on scroll
+
+---
+
+## ANIMATIONS (CRITICAL — Must be rich and distributed throughout)
+
+Implement ALL of the following:
+
+1. **Page Load**: Elegant fade-in with staggered reveal for navbar items (animation-delay per item)
+2. **Hero Section**: Full-screen animated text entrance — words slide up one by one
+3. **Scroll Animations**: Every section fades/slides in on scroll using IntersectionObserver
+4. **Floating Particles**: Subtle gold particle canvas on the hero background (small dots drifting slowly)
+5. **Count-Up Numbers**: Animated counters for stats (years of service, rooms, guests, rating)
+6. **Hover Microinteractions**: Cards scale slightly, gold underline slides on nav links, buttons have ripple effect on click
+7. **Room Cards**: 3D tilt effect on hover (using mouse position)
+8. **Section Dividers**: Animated gold line that draws itself when scrolled into view
+9. **Loading Screen**: Luxury preloader with hotel logo animation before site appears
+10. **Parallax**: Hero image moves at 50% scroll speed
+11. **Cursor**: Custom cursor — small gold circle that follows mouse
+
+---
+
+## HERO SLIDER (Advanced)
+
+Build a full-screen auto-advancing image slider with:
+- Smooth crossfade transition between slides (1.2s ease)
+- Auto-advance every 5 seconds
+- Manual navigation: left/right arrows + dot indicators
+- Each slide has: large heading (animated text), subheading, CTA button
+- Ken Burns effect: slow zoom on each slide image while visible
+- Progress bar at bottom showing time until next slide
+- Pause on hover
+
+---
+
+## PAGE STRUCTURE
+
+### 1. NAVBAR
+- Fixed, transparent on hero → solid dark on scroll (smooth transition)
+- Logo: "نزل المعالي" in gold + "Nuzul Al-Ma'ali" small below
+- Nav Links: الرئيسية / الغرف / الأجنحة / المرافق / معرض الصور / تواصل معنا
+- Right side: Language toggle (AR|EN) + "احجز الآن / Book Now" gold button
+- Mobile: hamburger menu with slide-in drawer
+
+### 2. HOME PAGE (index.html)
+
+**Section 1 — Hero Slider** (full screen, as described above)
+
+**Section 2 — Welcome** 
+- Split layout: decorative image left, text right
+- Animated gold ornamental divider
+- Short hotel description in both languages
+- Animated stat counters: عدد الغرف / سنوات الخبرة / تقييم الضيوف / الموقع
+
+**Section 3 — Room Highlights**
+- 3 featured room cards (Standard, Deluxe, Suite)
+- Each card: image, room name, short description, price/night, "View Details" button
+- Hover: 3D tilt + image zoom + gold border glow
+
+**Section 4 — Amenities / المرافق**
+- Icon grid: WiFi, Parking, Restaurant, Pool, Gym, Concierge, Room Service, Spa
+- Each icon animates in with a bounce when scrolled into view
+- ALL icons must be functional and visually complete — use inline SVG or a CDN icon library (Lucide or Heroicons via CDN)
+
+**Section 5 — Gallery**
+- Masonry CSS grid (3-4 columns)
+- Images load with blur-up animation
+- Click any image → lightbox modal with prev/next navigation
+
+**Section 6 — Testimonials**
+- Auto-scrolling carousel of guest reviews
+- Star ratings, guest name, country flag emoji
+
+**Section 7 — Booking CTA Banner**
+- Full-width section with dark overlay background image
+- Large text: "احجز إقامتك الآن"
+- Direct booking form embedded or button to booking page
+
+**Section 8 — Footer**
+- Logo, address, phone, email, social icons
+- Quick links, copyright
+
+---
+
+### 3. ROOMS PAGE (rooms.html)
+- Page header with background image + animated title
+- Filter tabs: الكل / غرف / أجنحة (filter cards with smooth fade animation)
+- Room cards grid: image, name, bed type, max guests, size (sqm), amenities icons, price, "Book Now" + "Details" buttons
+
+### 4. SUITES PAGE (suites.html)
+- Dedicated page for suites ONLY
+- Large luxurious layout — each suite gets a full-width section with gallery of 3-4 images, detailed description, amenities list, and pricing
+- "Book This Suite" button opens booking modal
+
+### 5. ROOM DETAIL PAGE (room-detail.html)
+- Dynamic: loads room data based on URL parameter (?id=1)
+- Image gallery carousel at top
+- Room description, amenities icons (ALL functional), policies
+- Booking widget on the right (sticky on desktop)
+- "Similar Rooms" section at bottom
+
+---
+
+## BOOKING SYSTEM
+
+### Guest Booking Flow:
+1. Select check-in / check-out dates (date picker)
+2. Select room type from dropdown
+3. Select number of guests
+4. Choose: "Book as Guest" OR "Login / Register"
+5. Guest booking: name, phone, email (no account required)
+6. Registered user: login → booking pre-fills profile data
+7. Booking summary page → Confirm button
+8. Confirmation page with booking reference number
+
+### Booking Rules:
+- Prevent double-booking (check availability against existing bookings)
+- Minimum stay: 1 night
+- Date validation: check-out must be after check-in
+
+---
+
+## USER AUTHENTICATION
+
+- Registration: Name, Email, Password, Phone
+- Login: Email + Password
+- Session management (localStorage or simple server sessions)
+- User profile page: view past bookings, manage upcoming bookings
+- Passwords: bcryptjs hashing
+
+---
+
+## ADMIN DASHBOARD (admin/)
+
+Protect with admin login (separate from guest login). Default: admin@hotel.com / admin123
+
+### Dashboard Overview Page:
+- Stat cards: Total Bookings, Revenue This Month, Available Rooms, Occupied Rooms, Pending Bookings
+- Line chart: bookings over last 30 days (use Chart.js from CDN)
+- Recent bookings table (last 10)
+- Quick actions panel
+
+### Rooms Management:
+- List all rooms with status badges (Available / Occupied / Maintenance)
+- Add / Edit / Delete rooms
+- Upload room images
+- Set pricing per room type
+
+### Bookings Management:
+- Full bookings table with filters: date range, status, room type
+- Status update: Pending → Confirmed → Checked In → Checked Out → Cancelled
+- View booking details modal
+- Export to CSV button
+
+### Guests Management:
+- Registered guests list
+- View guest booking history
+- Block/unblock guest
+
+### Calendar View:
+- Monthly calendar showing which rooms are booked on which days
+- Color coded: available (green), booked (red), maintenance (orange)
+
+### Settings:
+- Update hotel name, contact info, prices
+- Change admin password
+
+---
+
+## ICONS
+
+CRITICAL: Every icon on the site must be visually complete and functional. Use one of these approaches:
+- Import Lucide Icons via CDN: `<script src="https://unpkg.com/lucide@latest"></script>` then use `<i data-lucide="wifi"></i>` and call `lucide.createIcons()` after DOM load
+- OR use inline SVG paths for each icon
+- Icons needed: wifi, car, utensils, swimming-pool (or waves), dumbbell, concierge-bell, room-service, spa, star, calendar, users, phone, mail, map-pin, check, x, menu, arrow-left, arrow-right, moon, sun, globe
+
+NEVER leave a broken icon placeholder. Test that all icons render.
+
+---
+
+## FILE STRUCTURE
