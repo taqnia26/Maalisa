@@ -151,10 +151,17 @@ export function Layout({ children }: { children: ReactNode }) {
             </ul>
           </div>
         </div>
-        <div className="max-w-[1400px] mx-auto px-5 md:px-10 mt-10 pt-6 border-t border-cream/10 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-cream/50">
+        <div className="max-w-[1400px] mx-auto px-5 md:px-10 mt-10 pt-6 border-t border-cream/10 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-cream/50">
           <div>© {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}.</div>
           <div className="flex items-center gap-4">
-            <Link href="/admin/login" className="uppercase tracking-widest text-cream/60 hover:text-gold transition" data-testid="link-staff-login">{t("footer.staffLogin")}</Link>
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-2 border border-gold/40 text-gold hover:bg-gold hover:text-charcoal px-4 py-1.5 uppercase tracking-widest text-[11px] transition-all duration-200"
+              data-testid="link-staff-login"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6A2.25 2.25 0 005.25 5.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M18 12H9m0 0 3-3m-3 3 3 3" /></svg>
+              {t("footer.staffLogin")}
+            </Link>
             <span className="font-display italic">{t("brand.tagline")}</span>
           </div>
         </div>
