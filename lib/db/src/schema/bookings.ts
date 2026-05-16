@@ -5,6 +5,7 @@ export const bookingsTable = pgTable("bookings", {
   reference: text("reference").notNull().unique(),
   roomId: integer("room_id").notNull(),
   userId: integer("user_id"),
+  branchId: integer("branch_id"),
   guestName: text("guest_name").notNull(),
   guestEmail: text("guest_email").notNull(),
   guestPhone: text("guest_phone").notNull(),

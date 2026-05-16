@@ -9,6 +9,7 @@ export const usersTable = pgTable("users", {
   role: text("role").notNull().default("guest"),
   blocked: boolean("blocked").notNull().default(false),
   branchId: integer("branch_id"),
+  permissions: text("permissions"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

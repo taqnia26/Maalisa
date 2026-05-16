@@ -188,7 +188,9 @@ export const LoginResponse = zod.object({
     name: zod.string(),
     email: zod.string(),
     phone: zod.string().optional(),
-    role: zod.enum(["guest", "admin"]),
+    role: zod.enum(["guest", "reception", "finance", "manager", "admin"]),
+    branchId: zod.number().nullish(),
+    permissions: zod.array(zod.string()).optional(),
   }),
 });
 
@@ -201,7 +203,9 @@ export const MeResponse = zod.object({
   name: zod.string(),
   email: zod.string(),
   phone: zod.string().optional(),
-  role: zod.enum(["guest", "admin"]),
+  role: zod.enum(["guest", "reception", "finance", "manager", "admin"]),
+  branchId: zod.number().nullish(),
+  permissions: zod.array(zod.string()).optional(),
 });
 
 export const AdminStatsResponse = zod.object({

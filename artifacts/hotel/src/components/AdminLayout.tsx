@@ -15,6 +15,8 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 
+const STAFF_ROLES = ["admin", "manager", "reception", "finance"];
+
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { t, toggle } = useI18n();
   const { user, isLoading, logout } = useAuth();
@@ -26,18 +28,29 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         {t("common.loading")}
       </div>
     );
-  const role = user?.role;
-  const isStaff = role === "admin" || role === "reception";
+
+  const role = user?.role ?? "";
+  const isStaff = STAFF_ROLES.includes(role);
   if (!user || !isStaff) return <Redirect to="/admin/login" />;
+
   const isAdmin = role === "admin";
+  const perms: string[] = (user as unknown as { permissions?: string[] }).permissions ?? [];
+  const hasPerm = (p: string) => isAdmin || perms.includes(p);
+
+  function roleLabel() {
+    if (role === "admin") return t("admin.roleAdmin");
+    if (role === "manager") return t("admin.roleManager");
+    if (role === "finance") return t("admin.roleFinance");
+    return t("admin.roleReception");
+  }
 
   const items = [
     { href: "/admin", label: t("admin.dashboard"), icon: LayoutDashboard, show: true },
-    { href: "/admin/rooms", label: t("admin.rooms"), icon: BedDouble, show: true },
-    { href: "/admin/bookings", label: t("admin.bookings"), icon: BookOpenCheck, show: true },
-    { href: "/admin/finance", label: t("admin.finance"), icon: Wallet, show: isAdmin },
-    { href: "/admin/guests", label: t("admin.guests"), icon: Users, show: true },
-    { href: "/admin/calendar", label: t("admin.calendar"), icon: CalendarDays, show: true },
+    { href: "/admin/rooms", label: t("admin.rooms"), icon: BedDouble, show: hasPerm("rooms_view") },
+    { href: "/admin/bookings", label: t("admin.bookings"), icon: BookOpenCheck, show: hasPerm("bookings_view") },
+    { href: "/admin/finance", label: t("admin.finance"), icon: Wallet, show: hasPerm("reports_view") },
+    { href: "/admin/guests", label: t("admin.guests"), icon: Users, show: hasPerm("guests_view") },
+    { href: "/admin/calendar", label: t("admin.calendar"), icon: CalendarDays, show: hasPerm("calendar_view") },
     { href: "/admin/branches", label: t("admin.branches"), icon: Building2, show: isAdmin },
     { href: "/admin/settings", label: t("admin.settings"), icon: Settings, show: isAdmin },
   ].filter((i) => i.show);
@@ -48,7 +61,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         <Link href="/admin" className="px-6 py-6 border-b border-cream/10">
           <div className="font-display text-2xl text-gold">{t("brand.name")}</div>
           <div className="text-[10px] uppercase tracking-[0.25em] text-cream/60 mt-1">
-            {isAdmin ? t("admin.title") : t("admin.reception")}
+            {roleLabel()}
           </div>
         </Link>
         <nav className="flex-1 py-4">
@@ -70,7 +83,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
         </nav>
         <div className="border-t border-cream/10 p-4 space-y-2">
           <div className="text-[10px] text-cream/50 px-3">
-            {user.name} · {isAdmin ? t("admin.roleAdmin") : t("admin.roleReception")}
+            {user.name} · {roleLabel()}
           </div>
           <button onClick={toggle} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-cream/80 hover:text-gold">
             <Globe className="w-4 h-4" />
@@ -88,7 +101,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex-1 ltr:md:ml-64 rtl:md:mr-64 min-h-screen">
         <header className="md:hidden bg-charcoal text-cream px-5 py-4 flex items-center justify-between">
           <span className="font-display text-xl text-gold">
-            {isAdmin ? t("admin.title") : t("admin.reception")}
+            {roleLabel()}
           </span>
           <button onClick={() => logout()} className="text-cream/80">
             <LogOut className="w-5 h-5" />

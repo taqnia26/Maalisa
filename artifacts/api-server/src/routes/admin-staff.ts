@@ -9,8 +9,17 @@ import {
   paymentsTable,
 } from "@workspace/db";
 import { and, asc, desc, eq, gt, lt, ne, sql } from "drizzle-orm";
-import { hashPassword, requireAdmin, requireStaff } from "../lib/auth";
+import {
+  hashPassword,
+  requireAdmin,
+  requireStaff,
+  getEffectivePermissions,
+  getBranchFilter,
+  STAFF_ROLES,
+} from "../lib/auth";
 import { logger } from "../lib/logger";
+
+const CREATABLE_STAFF_ROLES = ["reception", "finance", "manager", "admin"] as const;
 
 const router: IRouter = Router();
 
@@ -105,19 +114,21 @@ function publicUser(u: typeof usersTable.$inferSelect) {
     role: u.role,
     blocked: u.blocked,
     branchId: u.branchId ?? null,
+    permissions: getEffectivePermissions(u),
   };
 }
 
-/** Create a customer (default) or a reception/admin staff member (admin only). */
+/** Create a customer (default) or a staff member (admin only). */
 router.post("/admin/users", async (req, res): Promise<void> => {
   const me = (req as AuthedRequest).user;
-  const { name, email, password, phone, role, branchId } = req.body ?? {};
+  const { name, email, password, phone, role, branchId, permissions } = req.body ?? {};
   if (!name || !email) {
     res.status(400).json({ error: "name and email are required" });
     return;
   }
   const wantedRole = String(role ?? "guest");
-  if (!["guest", "reception", "admin"].includes(wantedRole)) {
+  const allRoles = [...CREATABLE_STAFF_ROLES, "guest"];
+  if (!allRoles.includes(wantedRole)) {
     res.status(400).json({ error: "Invalid role" });
     return;
   }
@@ -131,7 +142,12 @@ router.post("/admin/users", async (req, res): Promise<void> => {
     res.status(409).json({ error: "Email already registered" });
     return;
   }
-  // Auto-generate a random password if none provided (reception creating walk-in customers).
+  // Validate permissions array if provided
+  let permissionsJson: string | null = null;
+  if (permissions != null && Array.isArray(permissions)) {
+    permissionsJson = JSON.stringify(permissions);
+  }
+  // Auto-generate a random password if none provided
   const pw = password && String(password).length >= 6 ? String(password) : randomBytes(5).toString("hex");
   const [user] = await db
     .insert(usersTable)
@@ -142,22 +158,22 @@ router.post("/admin/users", async (req, res): Promise<void> => {
       phone: phone ? String(phone) : null,
       role: wantedRole,
       branchId: branchId != null ? Number(branchId) : null,
+      permissions: permissionsJson,
     })
     .returning();
   res.status(201).json({
     user: publicUser(user),
-    // Return the generated password ONLY on creation so reception can hand it to the customer.
     generatedPassword: !password || String(password).length < 6 ? pw : undefined,
   });
 });
 
-/** List staff (reception + admin). Admin-only. */
+/** List staff (non-guest users). Admin-only. */
 router.get("/admin/users/staff", requireAdmin(), async (_req, res): Promise<void> => {
   const rows = await db.select().from(usersTable);
-  res.json(rows.filter((u) => u.role !== "guest").map(publicUser));
+  res.json(rows.filter((u) => (STAFF_ROLES as readonly string[]).includes(u.role)).map(publicUser));
 });
 
-/** Patch any user (admin only): role, branchId, blocked, name, phone. */
+/** Patch any user (admin only): role, branchId, blocked, name, phone, permissions. */
 router.patch("/admin/users/:id", requireAdmin(), async (req, res): Promise<void> => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
@@ -169,7 +185,7 @@ router.patch("/admin/users/:id", requireAdmin(), async (req, res): Promise<void>
   if (req.body?.phone !== undefined) updates["phone"] = req.body.phone ? String(req.body.phone) : null;
   if (req.body?.role !== undefined) {
     const r = String(req.body.role);
-    if (!["guest", "reception", "admin"].includes(r)) {
+    if (!["guest", "reception", "finance", "manager", "admin"].includes(r)) {
       res.status(400).json({ error: "Invalid role" });
       return;
     }
@@ -179,6 +195,13 @@ router.patch("/admin/users/:id", requireAdmin(), async (req, res): Promise<void>
     updates["branchId"] = req.body.branchId == null ? null : Number(req.body.branchId);
   }
   if (req.body?.blocked !== undefined) updates["blocked"] = Boolean(req.body.blocked);
+  if (req.body?.permissions !== undefined) {
+    if (req.body.permissions === null) {
+      updates["permissions"] = null;
+    } else if (Array.isArray(req.body.permissions)) {
+      updates["permissions"] = JSON.stringify(req.body.permissions);
+    }
+  }
   if (Object.keys(updates).length === 0) {
     res.status(400).json({ error: "No fields to update" });
     return;
@@ -235,6 +258,8 @@ async function serializeBooking(b: typeof bookingsTable.$inferSelect) {
 
 /** Look up a booking by reference number (e.g. NM-AB12CD). Staff. */
 router.get("/admin/bookings/by-reference/:ref", async (req, res): Promise<void> => {
+  const me = (req as unknown as AuthedRequest).user;
+  const branchFilter = getBranchFilter(me);
   const ref = String(req.params.ref ?? "").trim().toUpperCase();
   if (!ref) {
     res.status(400).json({ error: "reference is required" });
@@ -242,6 +267,10 @@ router.get("/admin/bookings/by-reference/:ref", async (req, res): Promise<void> 
   }
   const [b] = await db.select().from(bookingsTable).where(eq(bookingsTable.reference, ref));
   if (!b) {
+    res.status(404).json({ error: "Booking not found" });
+    return;
+  }
+  if (branchFilter != null && b.branchId !== branchFilter) {
     res.status(404).json({ error: "Booking not found" });
     return;
   }
@@ -268,6 +297,8 @@ router.get("/admin/bookings/by-reference/:ref", async (req, res): Promise<void> 
 
 /** Get a booking with its payments by id. Staff. */
 router.get("/admin/bookings/:id/full", async (req, res): Promise<void> => {
+  const me = (req as unknown as AuthedRequest).user;
+  const branchFilter = getBranchFilter(me);
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
     res.status(400).json({ error: "Invalid id" });
@@ -275,6 +306,10 @@ router.get("/admin/bookings/:id/full", async (req, res): Promise<void> => {
   }
   const [b] = await db.select().from(bookingsTable).where(eq(bookingsTable.id, id));
   if (!b) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  if (branchFilter != null && b.branchId !== branchFilter) {
     res.status(404).json({ error: "Not found" });
     return;
   }
@@ -349,6 +384,7 @@ router.post("/admin/bookings", async (req, res): Promise<void> => {
       reference: makeReference(),
       roomId,
       userId: body.userId != null ? Number(body.userId) : null,
+      branchId: me.branchId ?? null,
       guestName: String(body.guestName),
       guestEmail: body.guestEmail ? String(body.guestEmail) : "walkin@hotel.local",
       guestPhone: String(body.guestPhone),
@@ -369,7 +405,7 @@ router.post("/admin/bookings", async (req, res): Promise<void> => {
 
 /** Record a payment received from a customer at a branch. Staff. */
 router.post("/admin/bookings/:id/payments", async (req, res): Promise<void> => {
-  const me = (req as AuthedRequest).user;
+  const me = (req as unknown as AuthedRequest).user;
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) {
     res.status(400).json({ error: "Invalid id" });
@@ -386,11 +422,11 @@ router.post("/admin/bookings/:id/payments", async (req, res): Promise<void> => {
     return;
   }
   // Branch resolution rules:
-  // - reception: payment is ALWAYS attributed to their assigned branch (cannot be overridden);
-  //   if reception has no branch assigned, refuse — admin must assign a branch first.
+  // - non-admin staff: payment is ALWAYS attributed to their assigned branch (cannot be overridden);
+  //   if they have no branch assigned, refuse — admin must assign a branch first.
   // - admin: may pick any existing branch via body.branchId, else falls back to me.branchId.
   let branchId: number | null = null;
-  if (me.role === "reception") {
+  if (me.role !== "admin") {
     if (me.branchId == null) {
       res.status(400).json({ error: "Your account is not assigned to a branch. Ask an admin to assign you to a branch before recording payments." });
       return;
@@ -422,9 +458,11 @@ router.post("/admin/bookings/:id/payments", async (req, res): Promise<void> => {
     const out = await db.transaction(async (tx) => {
       // SELECT ... FOR UPDATE on the target booking
       const lockedRows = await tx.execute(sql`SELECT total_price FROM bookings WHERE id = ${id} FOR UPDATE`);
-      const lockedAny = lockedRows as unknown as { rows?: Array<{ total_price: string | number }> } & Array<{ total_price: string | number }>;
-      const row =
-        Array.isArray(lockedAny) ? lockedAny[0] : lockedAny.rows?.[0];
+      type LockedResult = { rows?: Array<{ total_price: string | number }> } | Array<{ total_price: string | number }>;
+      const lockedAny = lockedRows as unknown as LockedResult;
+      const row = Array.isArray(lockedAny)
+        ? lockedAny[0]
+        : (lockedAny as { rows?: Array<{ total_price: string | number }> }).rows?.[0];
       if (!row) throw new Error("Booking vanished during payment write");
       const total = Number(row.total_price);
 

@@ -45,14 +45,20 @@ router.get("/bookings", async (req, res): Promise<void> => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const isStaff = user.role === "admin" || user.role === "reception";
-  const rows = isStaff
-    ? await db.select().from(bookingsTable).orderBy(desc(bookingsTable.createdAt))
-    : await db
-        .select()
-        .from(bookingsTable)
-        .where(eq(bookingsTable.userId, user.id))
-        .orderBy(desc(bookingsTable.createdAt));
+  const staffRoles = ["admin", "manager", "reception", "finance"];
+  const isStaff = staffRoles.includes(user.role);
+  let rows;
+  if (!isStaff) {
+    rows = await db.select().from(bookingsTable)
+      .where(eq(bookingsTable.userId, user.id))
+      .orderBy(desc(bookingsTable.createdAt));
+  } else if (user.role !== "admin" && user.branchId != null) {
+    rows = await db.select().from(bookingsTable)
+      .where(eq(bookingsTable.branchId, user.branchId))
+      .orderBy(desc(bookingsTable.createdAt));
+  } else {
+    rows = await db.select().from(bookingsTable).orderBy(desc(bookingsTable.createdAt));
+  }
   const result = await Promise.all(rows.map(serialize));
   res.json(result);
 });
@@ -134,9 +140,15 @@ router.get("/bookings/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  // Authorization: staff (admin/reception) can read any booking; regular users only their own.
-  const isStaff = user.role === "admin" || user.role === "reception";
+  // Authorization: staff can read any booking (filtered by branch if applicable).
+  const staffRoles2 = ["admin", "manager", "reception", "finance"];
+  const isStaff = staffRoles2.includes(user.role);
+  const branchScoped = isStaff && user.role !== "admin" && user.branchId != null;
   if (!isStaff && b.userId !== user.id) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+  if (branchScoped && b.branchId !== user.branchId) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -162,13 +174,19 @@ router.patch("/bookings/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  const isStaff = user.role === "admin" || user.role === "reception";
+  const staffRoles3 = ["admin", "manager", "reception", "finance"];
+  const isStaff = staffRoles3.includes(user.role);
   if (!isStaff && existing.userId !== user.id) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
   if (!isStaff && status !== "cancelled") {
     res.status(403).json({ error: "Guests may only cancel" });
+    return;
+  }
+  // Branch-scoped staff cannot modify bookings outside their branch
+  if (isStaff && user.role !== "admin" && user.branchId != null && existing.branchId !== user.branchId) {
+    res.status(403).json({ error: "Forbidden" });
     return;
   }
   const [updated] = await db

@@ -11,7 +11,7 @@ export default function Profile() {
   const { t } = useI18n();
   const { user, isLoading } = useAuth();
   const qc = useQueryClient();
-  const { data: bookings } = useListBookings({ query: { enabled: !!user } });
+  const { data: bookings } = useListBookings({ query: { queryKey: getListBookingsQueryKey(), enabled: !!user } });
   const update = useUpdateBookingStatus();
 
   if (isLoading) return <div className="pt-32 text-center text-charcoal/60">{t("common.loading")}</div>;
@@ -61,7 +61,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 interface B {
-  id: number; reference: string; roomName: string; checkIn: string; checkOut: string; nights: number;
+  id: number; reference: string; roomName: string; checkIn: string; checkOut: string; nights?: number | null;
   guests: number; totalPrice: number; status: string;
 }
 function BookingRow({ b, onCancel, canCancel }: { b: B; onCancel?: () => void; canCancel?: boolean }) {
@@ -74,7 +74,7 @@ function BookingRow({ b, onCancel, canCancel }: { b: B; onCancel?: () => void; c
           <StatusBadge status={b.status} />
         </div>
         <div className="text-sm text-charcoal/70">
-          <span className="text-gold font-bold tracking-widest">{b.reference}</span> · {b.checkIn} → {b.checkOut} · {b.nights} {t("booking.nights")} · {b.guests} {t("rooms.guests")}
+          <span className="text-gold font-bold tracking-widest">{b.reference}</span> · {b.checkIn} → {b.checkOut} · {b.nights ?? 1} {t("booking.nights")} · {b.guests} {t("rooms.guests")}
         </div>
       </div>
       <div className="text-end">

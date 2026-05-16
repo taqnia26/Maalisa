@@ -1,6 +1,6 @@
 import { Link, useRoute } from "wouter";
 import { useState } from "react";
-import { useGetRoom, useListRooms } from "@workspace/api-client-react";
+import { useGetRoom, useListRooms, getGetRoomQueryKey } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
 import { Reveal } from "@/components/Reveal";
 import { GoldDivider } from "@/components/GoldDivider";
@@ -13,7 +13,7 @@ export default function RoomDetail() {
   const [, params] = useRoute("/rooms/:id");
   const id = Number(params?.id);
   const { t, language, isRtl } = useI18n();
-  const { data: room, isLoading } = useGetRoom(id, { query: { enabled: !Number.isNaN(id) } });
+  const { data: room, isLoading } = useGetRoom(id, { query: { queryKey: getGetRoomQueryKey(id), enabled: !Number.isNaN(id) } });
   const { data: allRooms } = useListRooms();
   const [imgIdx, setImgIdx] = useState(0);
 

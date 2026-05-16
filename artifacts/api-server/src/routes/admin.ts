@@ -1,7 +1,9 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { db, bookingsTable, roomsTable, usersTable } from "@workspace/db";
 import { and, desc, eq, gte, ne, sql } from "drizzle-orm";
-import { requireAdmin, requireStaff } from "../lib/auth";
+import { requireAdmin, requireStaff, getBranchFilter } from "../lib/auth";
+
+type AuthedRequest = Request & { user: typeof usersTable.$inferSelect };
 
 const router: IRouter = Router();
 
@@ -66,12 +68,14 @@ router.get("/admin/bookings-timeseries", requireAdmin(), async (_req, res): Prom
   );
 });
 
-router.get("/admin/recent-bookings", async (_req, res): Promise<void> => {
-  const rows = await db
-    .select()
-    .from(bookingsTable)
-    .orderBy(desc(bookingsTable.createdAt))
-    .limit(10);
+router.get("/admin/recent-bookings", async (req, res): Promise<void> => {
+  const me = (req as AuthedRequest).user;
+  const branchId = getBranchFilter(me);
+  const query = db.select().from(bookingsTable);
+  if (branchId != null) {
+    query.where(eq(bookingsTable.branchId, branchId));
+  }
+  const rows = await query.orderBy(desc(bookingsTable.createdAt)).limit(10);
   const result = await Promise.all(
     rows.map(async (b) => {
       const [room] = await db.select().from(roomsTable).where(eq(roomsTable.id, b.roomId));
@@ -104,12 +108,18 @@ router.get("/admin/recent-bookings", async (_req, res): Promise<void> => {
   res.json(result);
 });
 
-router.get("/admin/guests", async (_req, res): Promise<void> => {
+router.get("/admin/guests", async (req, res): Promise<void> => {
+  const me = (req as AuthedRequest).user;
+  const branchId = getBranchFilter(me);
   const users = await db.select().from(usersTable).where(eq(usersTable.role, "guest"));
   const result = await Promise.all(
     users.map(async (u) => {
       const bookings = await db.select().from(bookingsTable).where(eq(bookingsTable.userId, u.id));
-      const totalSpent = bookings
+      // For branch-scoped staff: only include guests who have a booking at their branch.
+      const branchBookings = branchId != null
+        ? bookings.filter((b) => b.branchId === branchId)
+        : bookings;
+      const totalSpent = branchBookings
         .filter((b) => b.status !== "cancelled")
         .reduce((sum, b) => sum + Number(b.totalPrice), 0);
       return {
@@ -117,13 +127,15 @@ router.get("/admin/guests", async (_req, res): Promise<void> => {
         name: u.name,
         email: u.email,
         phone: u.phone ?? undefined,
-        bookingsCount: bookings.length,
+        bookingsCount: branchBookings.length,
         totalSpent,
         blocked: u.blocked,
+        _hasBranchBooking: branchId == null || branchBookings.length > 0,
       };
     }),
   );
-  res.json(result);
+  const filtered = branchId != null ? result.filter((u) => u._hasBranchBooking) : result;
+  res.json(filtered.map(({ _hasBranchBooking: _, ...u }) => u));
 });
 
 router.get("/admin/calendar", async (req, res): Promise<void> => {

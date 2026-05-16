@@ -54,7 +54,7 @@ function PublicRouter() {
             <Route path="/suites" component={SuitesPage} />
             <Route path="/rooms/:id" component={RoomDetail} />
             <Route path="/booking" component={BookingPage} />
-            <Route path="/login" component={LoginPage} />
+            <Route path="/login"><LoginPage /></Route>
             <Route path="/register" component={RegisterPage} />
             <Route path="/profile" component={Profile} />
             <Route component={NotFound} />

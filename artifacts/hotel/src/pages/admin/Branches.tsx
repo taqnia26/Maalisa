@@ -13,14 +13,32 @@ interface Branch {
   address: string | null;
   phone: string | null;
 }
+const ALL_PERMS = [
+  "bookings_view", "bookings_manage",
+  "payments_view", "payments_record",
+  "rooms_view", "rooms_manage",
+  "reports_view",
+  "guests_view", "guests_manage",
+  "calendar_view",
+] as const;
+
+const ROLE_DEFAULT_PERMS: Record<string, readonly string[]> = {
+  admin: ALL_PERMS,
+  manager: ALL_PERMS,
+  reception: ["bookings_view","bookings_manage","payments_view","payments_record","rooms_view","guests_view","guests_manage","calendar_view"],
+  finance: ["bookings_view","payments_view","reports_view","guests_view","calendar_view"],
+  guest: [],
+};
+
 interface Staff {
   id: number;
   name: string;
   email: string;
   phone?: string;
-  role: "admin" | "reception" | "guest";
+  role: "admin" | "manager" | "reception" | "finance" | "guest";
   blocked: boolean;
   branchId: number | null;
+  permissions: string[];
 }
 
 async function api<T>(url: string, init?: RequestInit): Promise<T> {
@@ -69,8 +87,10 @@ function AdminBranchesInner() {
       qc.invalidateQueries({ queryKey: ["staff"] });
     },
   });
+  const [editingPerms, setEditingPerms] = useState<Staff | null>(null);
+
   const createStaff = useMutation({
-    mutationFn: (data: { name: string; email: string; password: string; role: string; branchId: number | null; phone?: string }) =>
+    mutationFn: (data: { name: string; email: string; password: string; role: string; branchId: number | null; phone?: string; permissions?: string[] }) =>
       api<{ user: Staff; generatedPassword?: string }>("/api/admin/users", {
         method: "POST",
         body: JSON.stringify(data),
@@ -81,7 +101,7 @@ function AdminBranchesInner() {
     },
   });
   const updateStaff = useMutation({
-    mutationFn: ({ id, ...data }: { id: number } & Partial<Staff>) =>
+    mutationFn: ({ id, ...data }: { id: number; branchId?: number | null; blocked?: boolean; role?: string; permissions?: string[] | null }) =>
       api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["staff"] }),
   });
@@ -150,44 +170,57 @@ function AdminBranchesInner() {
           <thead className="bg-cream-deep/50 text-xs uppercase tracking-widest text-charcoal/70">
             <tr>
               <th className="text-start p-3">{t("auth.fullName")}</th>
-              <th className="text-start p-3">{t("auth.email")}</th>
               <th className="text-start p-3">{t("admin.role")}</th>
               <th className="text-start p-3">{t("admin.assignedBranch")}</th>
+              <th className="text-start p-3">{t("admin.permissions")}</th>
             </tr>
           </thead>
           <tbody>
-            {(staffQ.data ?? []).map((s) => (
-              <tr key={s.id} className="border-t border-cream-deep">
-                <td className="p-3 font-medium">{s.name}</td>
-                <td className="p-3 text-charcoal/70">{s.email}</td>
-                <td className="p-3">
-                  <span className={`text-xs px-2 py-1 ${s.role === "admin" ? "bg-gold/20 text-bronze" : "bg-cream-deep text-charcoal/70"}`}>
-                    {s.role === "admin" ? t("admin.roleAdmin") : t("admin.roleReception")}
-                  </span>
-                </td>
-                <td className="p-3">
-                  <select
-                    value={s.branchId ?? ""}
-                    onChange={(e) =>
-                      updateStaff.mutate({ id: s.id, branchId: e.target.value ? Number(e.target.value) : null })
-                    }
-                    className="field !py-1 !px-2 !text-xs"
-                  >
-                    <option value="">—</option>
-                    {(branchesQ.data ?? []).map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
-            ))}
+            {(staffQ.data ?? []).map((s) => {
+              const roleLabel =
+                s.role === "admin" ? t("admin.roleAdmin") :
+                s.role === "manager" ? t("admin.roleManager") :
+                s.role === "finance" ? t("admin.roleFinance") :
+                t("admin.roleReception");
+              const roleColor =
+                s.role === "admin" ? "bg-gold/20 text-bronze" :
+                s.role === "manager" ? "bg-charcoal/10 text-charcoal" :
+                s.role === "finance" ? "bg-blue-50 text-blue-700" :
+                "bg-cream-deep text-charcoal/70";
+              return (
+                <tr key={s.id} className="border-t border-cream-deep">
+                  <td className="p-3 font-medium">{s.name}<div className="text-[10px] text-charcoal/50">{s.email}</div></td>
+                  <td className="p-3">
+                    <span className={`text-xs px-2 py-1 ${roleColor}`}>{roleLabel}</span>
+                  </td>
+                  <td className="p-3">
+                    <select
+                      value={s.branchId ?? ""}
+                      onChange={(e) =>
+                        updateStaff.mutate({ id: s.id, branchId: e.target.value ? Number(e.target.value) : null })
+                      }
+                      className="field !py-1 !px-2 !text-xs"
+                    >
+                      <option value="">—</option>
+                      {(branchesQ.data ?? []).map((b) => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="p-3 text-end">
+                    <button
+                      onClick={() => setEditingPerms(s)}
+                      className="text-xs text-charcoal/60 hover:text-gold underline"
+                    >
+                      {t("admin.editPermissions")}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
             {(staffQ.data ?? []).length === 0 && (
               <tr>
-                <td colSpan={4} className="p-8 text-center text-charcoal/50 italic">
-                  —
-                </td>
+                <td colSpan={4} className="p-8 text-center text-charcoal/50 italic">—</td>
               </tr>
             )}
           </tbody>
@@ -210,6 +243,16 @@ function AdminBranchesInner() {
           onSubmit={async (data) => {
             await createStaff.mutateAsync(data);
             setShowStaff(false);
+          }}
+        />
+      )}
+      {editingPerms && (
+        <PermissionsDialog
+          staff={editingPerms}
+          onClose={() => setEditingPerms(null)}
+          onSave={async (perms) => {
+            await updateStaff.mutateAsync({ id: editingPerms.id, permissions: perms });
+            setEditingPerms(null);
           }}
         />
       )}
@@ -295,7 +338,7 @@ function StaffDialog({
 }: {
   branches: Branch[];
   onClose: () => void;
-  onSubmit: (d: { name: string; email: string; password: string; role: string; branchId: number | null; phone?: string }) => void;
+  onSubmit: (d: { name: string; email: string; password: string; role: string; branchId: number | null; phone?: string; permissions?: string[] }) => void;
 }) {
   const { t } = useI18n();
   const [form, setForm] = useState({
@@ -305,15 +348,25 @@ function StaffDialog({
     role: "reception",
     branchId: "" as string,
     phone: "",
+    useCustomPerms: false,
+    permissions: [] as string[],
   });
+
+  const defaultPerms = ROLE_DEFAULT_PERMS[form.role] ?? [];
+
+  function togglePerm(p: string) {
+    setForm((f) => ({
+      ...f,
+      permissions: f.permissions.includes(p) ? f.permissions.filter((x) => x !== p) : [...f.permissions, p],
+    }));
+  }
+
   return (
-    <div className="fixed inset-0 z-[80] bg-charcoal/70 flex items-center justify-center p-5" onClick={onClose}>
-      <div className="bg-white p-8 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[80] bg-charcoal/70 flex items-center justify-center p-5 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white p-8 max-w-md w-full my-4" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-display text-2xl text-charcoal">{t("admin.addStaff")}</h3>
-          <button onClick={onClose}>
-            <X className="w-5 h-5" />
-          </button>
+          <button onClick={onClose}><X className="w-5 h-5" /></button>
         </div>
         <form
           className="space-y-3"
@@ -326,6 +379,7 @@ function StaffDialog({
               role: form.role,
               branchId: form.branchId ? Number(form.branchId) : null,
               phone: form.phone.trim() || undefined,
+              permissions: form.useCustomPerms ? form.permissions : undefined,
             });
           }}
         >
@@ -343,19 +397,14 @@ function StaffDialog({
           </div>
           <div>
             <label className="label">{t("auth.password")}</label>
-            <input
-              type="text"
-              className="field"
-              minLength={6}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required
-            />
+            <input type="text" className="field" minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
           </div>
           <div>
             <label className="label">{t("admin.role")}</label>
-            <select className="field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+            <select className="field" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value, permissions: [], useCustomPerms: false })}>
               <option value="reception">{t("admin.roleReception")}</option>
+              <option value="finance">{t("admin.roleFinance")}</option>
+              <option value="manager">{t("admin.roleManager")}</option>
               <option value="admin">{t("admin.roleAdmin")}</option>
             </select>
           </div>
@@ -363,17 +412,121 @@ function StaffDialog({
             <label className="label">{t("admin.assignedBranch")}</label>
             <select className="field" value={form.branchId} onChange={(e) => setForm({ ...form, branchId: e.target.value })}>
               <option value="">—</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
+              {branches.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
-          <button type="submit" className="btn-gold w-full !py-2">
+
+          {form.role !== "admin" && (
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer text-sm text-charcoal/70 mb-2">
+                <input
+                  type="checkbox"
+                  checked={form.useCustomPerms}
+                  onChange={(e) => setForm({ ...form, useCustomPerms: e.target.checked, permissions: e.target.checked ? [...defaultPerms] : [] })}
+                />
+                {t("admin.customPerms")}
+              </label>
+              {form.useCustomPerms && (
+                <PermissionsGrid
+                  selected={form.permissions}
+                  onChange={(p) => togglePerm(p)}
+                />
+              )}
+              {!form.useCustomPerms && (
+                <div className="text-xs text-charcoal/50 italic">{t("admin.defaultPerms")}: {defaultPerms.join(", ")}</div>
+              )}
+            </div>
+          )}
+
+          <button type="submit" className="btn-gold w-full !py-2">{t("common.save")}</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const PERM_LABELS: Record<string, string> = {
+  bookings_view: "admin.permBookingsView",
+  bookings_manage: "admin.permBookingsManage",
+  payments_view: "admin.permPaymentsView",
+  payments_record: "admin.permPaymentsRecord",
+  rooms_view: "admin.permRoomsView",
+  rooms_manage: "admin.permRoomsManage",
+  reports_view: "admin.permReportsView",
+  guests_view: "admin.permGuestsView",
+  guests_manage: "admin.permGuestsManage",
+  calendar_view: "admin.permCalendarView",
+};
+
+function PermissionsGrid({ selected, onChange }: { selected: string[]; onChange: (p: string) => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="grid grid-cols-2 gap-1 mt-2">
+      {ALL_PERMS.map((p) => (
+        <label key={p} className="flex items-center gap-2 text-xs cursor-pointer">
+          <input type="checkbox" checked={selected.includes(p)} onChange={() => onChange(p)} />
+          {t(PERM_LABELS[p] ?? p)}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function PermissionsDialog({
+  staff,
+  onClose,
+  onSave,
+}: {
+  staff: Staff;
+  onClose: () => void;
+  onSave: (perms: string[] | null) => void;
+}) {
+  const { t } = useI18n();
+  const defaultPerms = ROLE_DEFAULT_PERMS[staff.role] ?? [];
+  const [useDefault, setUseDefault] = useState(staff.permissions.length === 0 || JSON.stringify([...staff.permissions].sort()) === JSON.stringify([...defaultPerms].sort()));
+  const [perms, setPerms] = useState<string[]>(staff.permissions.length > 0 ? staff.permissions : [...defaultPerms]);
+
+  function toggle(p: string) {
+    setPerms((cur) => cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] bg-charcoal/70 flex items-center justify-center p-5 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white p-8 max-w-md w-full my-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-display text-xl text-charcoal">{t("admin.editPermissions")}</h3>
+          <button onClick={onClose}><X className="w-5 h-5" /></button>
+        </div>
+        <div className="text-xs text-charcoal/60 mb-4">{staff.name} — {staff.role}</div>
+
+        {staff.role === "admin" ? (
+          <div className="text-sm text-charcoal/70 italic mb-6">{t("admin.permReportsView")}</div>
+        ) : (
+          <>
+            <label className="flex items-center gap-2 cursor-pointer text-sm text-charcoal/70 mb-3">
+              <input
+                type="checkbox"
+                checked={useDefault}
+                onChange={(e) => { setUseDefault(e.target.checked); if (e.target.checked) setPerms([...defaultPerms]); }}
+              />
+              {t("admin.defaultPerms")}
+            </label>
+            <PermissionsGrid
+              selected={perms}
+              onChange={toggle}
+            />
+          </>
+        )}
+
+        <div className="flex gap-2 mt-6">
+          <button
+            onClick={() => onSave(useDefault ? null : perms)}
+            className="btn-gold flex-1 !py-2"
+          >
             {t("common.save")}
           </button>
-        </form>
+          <button onClick={onClose} className="btn-outline-gold flex-1 !py-2">{t("common.cancel")}</button>
+        </div>
       </div>
     </div>
   );

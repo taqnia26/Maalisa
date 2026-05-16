@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useListRooms } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
-import { hotelImages, pickImage } from "@/lib/images";
+import { hotelImages, pickImage, exteriorImage } from "@/lib/images";
 import { Particles } from "@/components/Particles";
 import { Reveal } from "@/components/Reveal";
 import { GoldDivider } from "@/components/GoldDivider";
@@ -194,7 +194,7 @@ export default function Home() {
 
       {/* CTA BANNER */}
       <section className="relative py-24 px-5 overflow-hidden bg-charcoal">
-        <div className="absolute inset-0" style={{ backgroundImage: `url(/api/images/hotel-cta.png)`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.55, filter: "saturate(1.15) contrast(1.05)" }} />
+        <div className="absolute inset-0" style={{ backgroundImage: `url(${exteriorImage})`, backgroundSize: "cover", backgroundPosition: "center", opacity: 0.55, filter: "saturate(1.15) contrast(1.05)" }} />
         <div className="absolute inset-0 bg-gradient-to-b from-charcoal/40 via-charcoal/55 to-charcoal/85" />
         <div className="relative max-w-3xl mx-auto text-center text-cream">
           <Reveal>

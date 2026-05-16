@@ -14,13 +14,16 @@ export default function LoginPage({ adminMode = false }: { adminMode?: boolean }
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  function fillCreds(role: "admin" | "reception") {
+  function fillCreds(role: "admin" | "reception" | "finance") {
     if (role === "admin") {
       setEmail("admin@hotel.com");
       setPassword("admin123");
-    } else {
+    } else if (role === "reception") {
       setEmail("reception@hotel.com");
       setPassword("reception123");
+    } else {
+      setEmail("finance@hotel.com");
+      setPassword("finance123");
     }
     setError(null);
   }
@@ -61,9 +64,10 @@ export default function LoginPage({ adminMode = false }: { adminMode?: boolean }
           {adminMode && (
             <>
               <div className="text-xs text-bronze bg-cream-deep px-3 py-2 mb-3 border-l-2 border-gold">{t("admin.demoCreds")}</div>
-              <div className="flex gap-2 mb-5">
+              <div className="flex gap-2 mb-5 flex-wrap">
                 <button type="button" onClick={() => fillCreds("admin")} className="flex-1 text-xs uppercase tracking-widest border border-gold/50 text-charcoal hover:bg-gold hover:text-cream py-2 transition" data-testid="quickfill-admin">{t("admin.quickFillAdmin")}</button>
                 <button type="button" onClick={() => fillCreds("reception")} className="flex-1 text-xs uppercase tracking-widest border border-gold/50 text-charcoal hover:bg-gold hover:text-cream py-2 transition" data-testid="quickfill-reception">{t("admin.quickFillReception")}</button>
+                <button type="button" onClick={() => fillCreds("finance")} className="flex-1 text-xs uppercase tracking-widest border border-gold/50 text-charcoal hover:bg-gold hover:text-cream py-2 transition" data-testid="quickfill-finance">{t("admin.quickFillFinance")}</button>
               </div>
             </>
           )}

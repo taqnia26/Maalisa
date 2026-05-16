@@ -84,6 +84,9 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const UserRole = {
   guest: "guest",
+  reception: "reception",
+  finance: "finance",
+  manager: "manager",
   admin: "admin",
 } as const;
 
@@ -93,6 +96,8 @@ export interface User {
   email: string;
   phone?: string;
   role: UserRole;
+  branchId?: number | null;
+  permissions?: string[];
 }
 
 export interface AuthResponse {

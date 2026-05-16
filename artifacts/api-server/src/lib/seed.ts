@@ -1,5 +1,5 @@
 import { db, roomsTable, usersTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { hashPassword } from "./auth";
 import { logger } from "./logger";
 
@@ -9,8 +9,10 @@ import { logger } from "./logger";
  */
 export async function ensureExtendedSchema(): Promise<void> {
   await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS branch_id integer`);
+  await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS permissions text`);
   await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS paid_amount numeric(10,2) NOT NULL DEFAULT '0'`);
   await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS payment_status text NOT NULL DEFAULT 'unpaid'`);
+  await db.execute(sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS branch_id integer`);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS branches (
       id serial PRIMARY KEY,
@@ -36,19 +38,26 @@ export async function ensureExtendedSchema(): Promise<void> {
     )
   `);
   await db.execute(sql`CREATE INDEX IF NOT EXISTS payments_booking_id_idx ON payments (booking_id)`);
+  await db.execute(sql`CREATE INDEX IF NOT EXISTS bookings_branch_id_idx ON bookings (branch_id)`);
 }
 
-const HOTEL_IMAGES = [
-  "/api/images/hotel-1.jpeg",
-  "/api/images/hotel-2.jpeg",
-  "/api/images/hotel-3.jpeg",
-  "/api/images/hotel-4.jpeg",
-  "/api/images/hotel-5.jpeg",
-  "/api/images/hotel-6.jpeg",
-  "/api/images/hotel-7.jpeg",
-  "/api/images/hotel-8.jpeg",
-  "/api/images/hotel-9.jpeg",
-  "/api/images/hotel-10.jpeg",
+const STUDIO_IMAGES = [
+  "/api/images/studio-01.png",
+  "/api/images/studio-02.png",
+  "/api/images/studio-03.png",
+  "/api/images/studio-04.png",
+];
+const SUITE1_IMAGES = [
+  "/api/images/suite1-01.png",
+  "/api/images/suite1-02.png",
+  "/api/images/suite1-03.png",
+  "/api/images/suite1-04.png",
+];
+const SUITE2_IMAGES = [
+  "/api/images/suite2-01.png",
+  "/api/images/suite2-02.png",
+  "/api/images/suite2-03.png",
+  "/api/images/suite2-04.png",
 ];
 
 const ROOMS_SEED = [
@@ -138,20 +147,42 @@ const ROOMS_SEED = [
   },
 ];
 
+// Images assigned per room type for seeding and migration
+const ROOM_IMAGES_BY_TYPE: Record<string, string[][]> = {
+  // index within type → [gallery images]
+  standard: [STUDIO_IMAGES, STUDIO_IMAGES, STUDIO_IMAGES],
+  deluxe: [SUITE1_IMAGES, SUITE1_IMAGES],
+  suite: [SUITE2_IMAGES, SUITE2_IMAGES],
+};
+
 export async function seedIfEmpty(): Promise<void> {
   const existing = await db.select().from(roomsTable);
   const adminEmail = "admin@hotel.com";
   const admins = await db.select().from(usersTable);
   if (existing.length === 0) {
     logger.info("Seeding rooms");
-    for (let i = 0; i < ROOMS_SEED.length; i++) {
-      const r = ROOMS_SEED[i];
-      const images = [
-        HOTEL_IMAGES[i % HOTEL_IMAGES.length],
-        HOTEL_IMAGES[(i + 1) % HOTEL_IMAGES.length],
-        HOTEL_IMAGES[(i + 2) % HOTEL_IMAGES.length],
-      ];
+    const counters: Record<string, number> = {};
+    for (const r of ROOMS_SEED) {
+      const idx = counters[r.type] ?? 0;
+      counters[r.type] = idx + 1;
+      const pool = ROOM_IMAGES_BY_TYPE[r.type] ?? [STUDIO_IMAGES];
+      const images = pool[idx % pool.length];
       await db.insert(roomsTable).values({ ...r, images, status: "available" });
+    }
+  } else {
+    // Update existing rooms to use new professional photos if they still have old hotel-N paths
+    const counters: Record<string, number> = {};
+    for (const room of existing) {
+      const oldImages: string[] = Array.isArray(room.images) ? (room.images as string[]) : [];
+      const hasOldImages = oldImages.some((img) => typeof img === "string" && img.includes("hotel-"));
+      if (hasOldImages) {
+        const type = room.type ?? "standard";
+        const idx = counters[type] ?? 0;
+        counters[type] = idx + 1;
+        const pool = ROOM_IMAGES_BY_TYPE[type] ?? [STUDIO_IMAGES];
+        const images = pool[idx % pool.length];
+        await db.update(roomsTable).set({ images }).where(eq(roomsTable.id, room.id));
+      }
     }
   }
   if (!admins.some((u) => u.email === adminEmail)) {
@@ -173,6 +204,17 @@ export async function seedIfEmpty(): Promise<void> {
       passwordHash: await hashPassword("reception123"),
       phone: "+966500000001",
       role: "reception",
+    });
+  }
+  const financeEmail = "finance@hotel.com";
+  if (!admins.some((u) => u.email === financeEmail)) {
+    logger.info("Seeding finance user");
+    await db.insert(usersTable).values({
+      name: "مسؤول المالية",
+      email: financeEmail,
+      passwordHash: await hashPassword("finance123"),
+      phone: "+966500000002",
+      role: "finance",
     });
   }
 }

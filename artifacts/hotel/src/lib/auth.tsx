@@ -1,9 +1,10 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useMe, useLogin, useLogout, useRegister, getMeQueryKey } from "@workspace/api-client-react";
+import type { User } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface AuthCtx {
-  user: ReturnType<typeof useMe>["data"] | null | undefined;
+  user: User | null | undefined;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, phone?: string) => Promise<void>;
@@ -14,7 +15,7 @@ const Ctx = createContext<AuthCtx | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
-  const me = useMe({ query: { retry: false, staleTime: 30_000 } });
+  const me = useMe({ query: { queryKey: getMeQueryKey(), retry: false, staleTime: 30_000 } });
   const login = useLogin();
   const register = useRegister();
   const logout = useLogout();

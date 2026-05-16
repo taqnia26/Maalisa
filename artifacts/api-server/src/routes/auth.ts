@@ -9,6 +9,7 @@ import {
   getUserFromRequest,
   setSessionCookie,
   clearSessionCookie,
+  getEffectivePermissions,
 } from "../lib/auth";
 
 const router: IRouter = Router();
@@ -20,6 +21,8 @@ function publicUser(u: typeof usersTable.$inferSelect) {
     email: u.email,
     phone: u.phone ?? undefined,
     role: u.role,
+    branchId: u.branchId ?? null,
+    permissions: getEffectivePermissions(u),
   };
 }
 
